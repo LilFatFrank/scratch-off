@@ -1,0 +1,2 @@
+export const SET_APP_BACKGROUND = 'SET_APP_BACKGROUND';
+export const SET_APP_COLOR = 'SET_APP_COLOR';

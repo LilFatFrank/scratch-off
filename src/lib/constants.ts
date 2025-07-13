@@ -118,3 +118,13 @@ export const SIGNED_KEY_REQUEST_TYPE = [
   { name: 'key', type: 'bytes' },
   { name: 'deadline', type: 'uint256' },
 ];
+
+export const APP_COLORS = {
+  DEFAULT: "#7727DE",
+  WON: "#00A151",
+  LOST: "#5E5E5E",
+  LOADING: "#FACC15",
+  ERROR: "#8E3033",
+};
+
+export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
