@@ -92,108 +92,150 @@ export function ScratchDemo() {
       throw new Error("Wallet not connected");
     }
 
-    const maxRetries = 3;
-    let lastError: Error | null = null;
+    const connection = new Connection(
+      process.env.NEXT_PUBLIC_RPC || "https://api.mainnet-beta.solana.com"
+    );
+    const recipient = new PublicKey(RECIPIENT_ADDRESS);
+    const mint = new PublicKey(USDC_MINT);
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const connection = new Connection(
-          process.env.NEXT_PUBLIC_RPC || "https://api.mainnet-beta.solana.com"
-        );
-        const recipient = new PublicKey(RECIPIENT_ADDRESS);
-        const mint = new PublicKey(USDC_MINT);
+    // Create transaction
+    const transaction = new Transaction();
 
-        // Create transaction
-        const transaction = new Transaction();
+    // Get token accounts
+    const userTokenAccount = getAssociatedTokenAddressSync(mint, publicKey);
+    const recipientTokenAccount = getAssociatedTokenAddressSync(
+      mint,
+      recipient
+    );
 
-        // Get token accounts
-        const userTokenAccount = getAssociatedTokenAddressSync(mint, publicKey);
-        const recipientTokenAccount = getAssociatedTokenAddressSync(
-          mint,
-          recipient
-        );
+    // Add create token account instruction for recipient if needed
+    transaction.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        publicKey,
+        recipientTokenAccount,
+        recipient,
+        mint,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
 
-        // Add create token account instruction for recipient if needed
-        transaction.add(
-          createAssociatedTokenAccountIdempotentInstruction(
-            publicKey,
-            recipientTokenAccount,
-            recipient,
-            mint,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          )
-        );
+    // Add transfer instruction (1 USDC = 1,000,000 units with 6 decimals)
+    transaction.add(
+      createTransferCheckedInstruction(
+        userTokenAccount,
+        mint,
+        recipientTokenAccount,
+        publicKey,
+        1_000_000,
+        6
+      )
+    );
 
-        // Add transfer instruction (1 USDC = 1,000,000 units with 6 decimals)
-        transaction.add(
-          createTransferCheckedInstruction(
-            userTokenAccount,
-            mint,
-            recipientTokenAccount,
-            publicKey,
-            1_000_000,
-            6
-          )
-        );
+    // Get fresh blockhash right before sending
+    const { blockhash, lastValidBlockHeight } =
+      await connection.getLatestBlockhash("finalized");
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = publicKey;
 
-        // Get fresh blockhash right before sending
-        const { blockhash, lastValidBlockHeight } =
-          await connection.getLatestBlockhash("finalized");
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = publicKey;
+    try {
+      console.log("Sending transaction...");
+      const tx = await sendTransaction(transaction, connection);
 
-        console.log(`Attempt ${attempt}: Sending transaction...`);
-        const tx = await sendTransaction(transaction, connection);
+      // Wait for confirmation with proper timeout
+      const confirmation = await connection.confirmTransaction(
+        {
+          signature: tx,
+          blockhash,
+          lastValidBlockHeight,
+        },
+        "confirmed"
+      );
 
-        // Wait for confirmation with proper timeout
-        const confirmation = await connection.confirmTransaction(
-          {
-            signature: tx,
-            blockhash,
-            lastValidBlockHeight,
-          },
-          "confirmed"
-        );
+      if (confirmation.value.err) {
+        throw new Error("Transaction failed");
+      }
 
-        if (confirmation.value.err) {
-          throw new Error("Transaction failed");
-        }
+      console.log("Transaction successful!");
+      setRevealPercentage(60);
+      setGameState("processing");
+      await processPrize(tx);
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setError(errorMessage);
 
-        console.log(`Transaction successful on attempt ${attempt}`);
-        setRevealPercentage(60);
-        setGameState("processing");
-        await processPrize(tx);
-        return; // Success, exit retry loop
-      } catch (error) {
-        console.error(`Payment attempt ${attempt} failed:`, error);
-        lastError = error instanceof Error ? error : new Error(String(error));
+      // Check if user rejected the transaction - don't retry in this case
+      if (
+        errorMessage.toLowerCase().includes("user rejected")
+      ) {
+        setIsLoading(false);
+        throw new Error("Transaction was cancelled by user");
+      }
 
-        // If this is the last attempt, throw the error
-        if (attempt === maxRetries) {
-          setIsLoading(false);
+      // For other errors, retry up to 3 times
+      const maxRetries = 3;
+      let lastError: Error = error instanceof Error ? error : new Error(String(error));
 
-          // Provide more specific error messages
-          if (
-            lastError.message.includes("block height exceeded") ||
-            lastError.message.includes("expired")
-          ) {
-            throw new Error(
-              "Transaction expired after multiple attempts. Please try again."
-            );
-          } else if (lastError.message.includes("insufficient funds")) {
-            throw new Error(
-              "Insufficient USDC balance. Please ensure you have at least 1 USDC."
-            );
-          } else {
-            throw new Error(
-              `Payment failed after ${maxRetries} attempts: ${lastError.message}`
-            );
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`Retry attempt ${attempt}: Sending transaction...`);
+          
+          // Get fresh blockhash for retry
+          const { blockhash: retryBlockhash, lastValidBlockHeight: retryLastValidBlockHeight } =
+            await connection.getLatestBlockhash("finalized");
+          transaction.recentBlockhash = retryBlockhash;
+          
+          const retryTx = await sendTransaction(transaction, connection);
+
+          const retryConfirmation = await connection.confirmTransaction(
+            {
+              signature: retryTx,
+              blockhash: retryBlockhash,
+              lastValidBlockHeight: retryLastValidBlockHeight,
+            },
+            "confirmed"
+          );
+
+          if (retryConfirmation.value.err) {
+            throw new Error("Transaction failed");
           }
-        }
 
-        // Wait a bit before retrying
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          console.log(`Transaction successful on retry attempt ${attempt}!`);
+          setRevealPercentage(60);
+          setGameState("processing");
+          await processPrize(retryTx);
+          return; // Success, exit retry loop
+        } catch (retryError) {
+          console.error(`Retry attempt ${attempt} failed:`, retryError);
+          lastError = retryError instanceof Error ? retryError : new Error(String(retryError));
+
+          // If this is the last attempt, throw the error
+          if (attempt === maxRetries) {
+            setIsLoading(false);
+
+            // Provide more specific error messages
+            if (
+              lastError.message.includes("block height exceeded") ||
+              lastError.message.includes("expired")
+            ) {
+              throw new Error(
+                "Transaction expired after multiple attempts. Please try again."
+              );
+            } else if (lastError.message.includes("insufficient funds")) {
+              throw new Error(
+                "Insufficient USDC balance. Please ensure you have at least 1 USDC."
+              );
+            } else {
+              throw new Error(
+                `Payment failed after ${maxRetries} attempts: ${lastError.message}`
+              );
+            }
+          }
+
+          // Wait a bit before retrying
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
       }
     }
   };
