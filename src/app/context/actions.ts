@@ -1,2 +1,4 @@
 export const SET_APP_BACKGROUND = 'SET_APP_BACKGROUND';
 export const SET_APP_COLOR = 'SET_APP_COLOR';
+export const SET_HAS_PROVIDER = 'SET_HAS_PROVIDER';
+export const SET_PUBLIC_KEY = 'SET_PUBLIC_KEY';

@@ -15,12 +15,12 @@ import { motion } from "framer-motion";
 import { AppContext } from "../app/context";
 import { SET_APP_BACKGROUND, SET_APP_COLOR } from "../app/context/actions";
 import { APP_COLORS, USDC_MINT } from "../lib/constants";
+import { sdk } from "@farcaster/miniapp-sdk";
 
-const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS!; // Replace with actual recipient address
+const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS!;
 
 export function ScratchDemo() {
   const [state, dispatch] = useContext(AppContext);
-  const { publicKey, sendTransaction } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [gameState, setGameState] = useState<
     "idle" | "paying" | "processing" | "complete"
@@ -35,11 +35,9 @@ export function ScratchDemo() {
     console.warn("NEXT_PUBLIC_ADMIN_WALLET_ADDRESS not set, using fallback");
   }
 
-  console.log(publicKey);
-
   const handleStartGame = async () => {
     resetGame();
-    if (!publicKey) {
+    if (!state.hasProvider) {
       setError("Please connect your wallet first");
       dispatch({
         type: SET_APP_COLOR,
@@ -88,7 +86,7 @@ export function ScratchDemo() {
   };
 
   const sendUsdcPayment = async () => {
-    if (!publicKey || !sendTransaction) {
+    if (!state.publicKey) {
       throw new Error("Wallet not connected");
     }
 
@@ -102,7 +100,7 @@ export function ScratchDemo() {
     const transaction = new Transaction();
 
     // Get token accounts
-    const userTokenAccount = getAssociatedTokenAddressSync(mint, publicKey);
+    const userTokenAccount = getAssociatedTokenAddressSync(mint, new PublicKey(state.publicKey));
     const recipientTokenAccount = getAssociatedTokenAddressSync(
       mint,
       recipient
@@ -111,7 +109,7 @@ export function ScratchDemo() {
     // Add create token account instruction for recipient if needed
     transaction.add(
       createAssociatedTokenAccountIdempotentInstruction(
-        publicKey,
+        new PublicKey(state.publicKey),
         recipientTokenAccount,
         recipient,
         mint,
@@ -126,7 +124,7 @@ export function ScratchDemo() {
         userTokenAccount,
         mint,
         recipientTokenAccount,
-        publicKey,
+        new PublicKey(state.publicKey),
         1_000_000,
         6
       )
@@ -136,16 +134,23 @@ export function ScratchDemo() {
     const { blockhash, lastValidBlockHeight } =
       await connection.getLatestBlockhash("finalized");
     transaction.recentBlockhash = blockhash;
-    transaction.feePayer = publicKey;
+    transaction.feePayer = new PublicKey(state.publicKey);
 
     try {
       console.log("Sending transaction...");
-      const tx = await sendTransaction(transaction, connection);
+      const provider = await sdk.wallet.getSolanaProvider();
+      const response = await provider?.signAndSendTransaction({
+        transaction,
+      });
+
+      if (!response) {
+        throw new Error("Transaction failed");
+      }
 
       // Wait for confirmation with proper timeout
       const confirmation = await connection.confirmTransaction(
         {
-          signature: tx,
+          signature: response.signature,
           blockhash,
           lastValidBlockHeight,
         },
@@ -159,38 +164,46 @@ export function ScratchDemo() {
       console.log("Transaction successful!");
       setRevealPercentage(60);
       setGameState("processing");
-      await processPrize(tx);
+      await processPrize(response.signature);
     } catch (error) {
       console.error("Transaction failed:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       setError(errorMessage);
 
       // Check if user rejected the transaction - don't retry in this case
-      if (
-        errorMessage.toLowerCase().includes("user rejected")
-      ) {
+      if (errorMessage.toLowerCase().includes("user rejected")) {
         setIsLoading(false);
         throw new Error("Transaction was cancelled by user");
       }
 
       // For other errors, retry up to 3 times
       const maxRetries = 3;
-      let lastError: Error = error instanceof Error ? error : new Error(String(error));
+      let lastError: Error =
+        error instanceof Error ? error : new Error(String(error));
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`Retry attempt ${attempt}: Sending transaction...`);
-          
+
           // Get fresh blockhash for retry
-          const { blockhash: retryBlockhash, lastValidBlockHeight: retryLastValidBlockHeight } =
-            await connection.getLatestBlockhash("finalized");
+          const {
+            blockhash: retryBlockhash,
+            lastValidBlockHeight: retryLastValidBlockHeight,
+          } = await connection.getLatestBlockhash("finalized");
           transaction.recentBlockhash = retryBlockhash;
-          
-          const retryTx = await sendTransaction(transaction, connection);
+          const provider = await sdk.wallet.getSolanaProvider();
+          const retryTx = await provider?.signAndSendTransaction({
+            transaction,
+          });
+
+          if (!retryTx?.signature) {
+            throw new Error("Transaction failed");
+          }
 
           const retryConfirmation = await connection.confirmTransaction(
             {
-              signature: retryTx,
+              signature: retryTx.signature,
               blockhash: retryBlockhash,
               lastValidBlockHeight: retryLastValidBlockHeight,
             },
@@ -204,11 +217,14 @@ export function ScratchDemo() {
           console.log(`Transaction successful on retry attempt ${attempt}!`);
           setRevealPercentage(60);
           setGameState("processing");
-          await processPrize(retryTx);
+          await processPrize(retryTx.signature);
           return; // Success, exit retry loop
         } catch (retryError) {
           console.error(`Retry attempt ${attempt} failed:`, retryError);
-          lastError = retryError instanceof Error ? retryError : new Error(String(retryError));
+          lastError =
+            retryError instanceof Error
+              ? retryError
+              : new Error(String(retryError));
 
           // If this is the last attempt, throw the error
           if (attempt === maxRetries) {
@@ -243,7 +259,7 @@ export function ScratchDemo() {
   const processPrize = async (paymentTx: string) => {
     try {
       // Validate required fields before sending
-      if (!publicKey) {
+      if (!state.publicKey) {
         throw new Error(
           "Public key is not available - wallet may have disconnected"
         );
@@ -256,7 +272,7 @@ export function ScratchDemo() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userWallet: publicKey.toString(),
+          userWallet: state.publicKey,
           paymentTx: paymentTx,
         }),
       });
@@ -323,17 +339,6 @@ export function ScratchDemo() {
     });
   };
 
-  const getLoadingMessage = () => {
-    switch (gameState) {
-      case "paying":
-        return "Processing payment...";
-      case "processing":
-        return "Processing prize...";
-      default:
-        return "";
-    }
-  };
-
   return (
     <>
       {
@@ -378,21 +383,34 @@ export function ScratchDemo() {
                 stiffness: 300,
                 damping: 20,
               }}
-              style={{ perspective: 1000 }}
+              style={{
+                perspective: 1000,
+              }}
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
+              {/* Shadow element that follows the card rotation */}
+              <div
+                className="absolute inset-0 w-[320px] h-[400px] rounded-2xl"
+                style={{
+                  background: "rgba(0, 0, 0, 0.4)",
+                  filter: "blur(28px)",
+                  transform: "translateY(30px)",
+                  zIndex: -1,
+                }}
+              />
+
               {/* Scratched card on bottom */}
               <img
                 src={"/assets/scratched-card-image.png"}
                 alt="scratched-card"
-                className="w-full h-auto rounded-2xl select-none"
+                className="rounded-2xl select-none w-[320px] h-[400px] relative z-10 mx-auto"
                 draggable={false}
               />
 
               {/* Scratch card on top with percentage-based reveal */}
               <motion.div
-                className="absolute inset-0 w-full overflow-hidden rounded-2xl"
+                className="absolute inset-0 w-full overflow-hidden rounded-2xl z-20"
                 initial={{ height: "100%" }}
                 animate={{ height: `${100 - revealPercentage}%` }}
                 transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
@@ -401,9 +419,8 @@ export function ScratchDemo() {
                 <img
                   src={"/assets/scratch-card-image.png"}
                   alt="scratch-card"
-                  className="w-full h-auto rounded-2xl select-none"
+                  className="w-[320px] h-[400px] rounded-2xl select-none mx-auto"
                   draggable={false}
-                  style={{ display: "block" }}
                 />
               </motion.div>
             </motion.div>
@@ -419,7 +436,7 @@ export function ScratchDemo() {
                 ? "visible"
                 : "hidden",
           }}
-          disabled={isLoading || !publicKey}
+          disabled={isLoading}
           onClick={
             gameState === "complete"
               ? () => resetGame()
