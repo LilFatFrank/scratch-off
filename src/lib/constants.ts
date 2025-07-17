@@ -20,13 +20,13 @@ export const APP_URL = process.env.NEXT_PUBLIC_URL!;
  * The name of the mini app as displayed to users.
  * Used in titles, headers, and app store listings.
  */
-export const APP_NAME = 'crypto-scratch-off';
+export const APP_NAME = 'Scratch Off';
 
 /**
  * A brief description of the mini app's functionality.
  * Used in app store listings and metadata.
  */
-export const APP_DESCRIPTION = 'scratch to reveal your fate';
+export const APP_DESCRIPTION = 'Scratch to reveal your fate';
 
 /**
  * The primary category for the mini app.
@@ -45,25 +45,25 @@ export const APP_TAGS = ['neynar', 'starter-kit', 'demo'];
  * URL for the app's icon image.
  * Used in app store listings and UI elements.
  */
-export const APP_ICON_URL = `${APP_URL}/icon.png`;
+export const APP_ICON_URL = `${APP_URL}/assets/scratch-card-image.png`;
 
 /**
  * URL for the app's Open Graph image.
  * Used for social media sharing and previews.
  */
-export const APP_OG_IMAGE_URL = `${APP_URL}/api/opengraph-image`;
+export const APP_OG_IMAGE_URL = `${APP_URL}/assets/splash-image.png`;
 
 /**
  * URL for the app's splash screen image.
  * Displayed during app loading.
  */
-export const APP_SPLASH_URL = `${APP_URL}/splash.png`;
+export const APP_SPLASH_URL = `${APP_URL}/assets/splash-image.png`;
 
 /**
  * Background color for the splash screen.
  * Used as fallback when splash image is loading.
  */
-export const APP_SPLASH_BACKGROUND_COLOR = '#f7f7f7';
+export const APP_SPLASH_BACKGROUND_COLOR = '#000';
 
 // --- UI Configuration ---
 /**

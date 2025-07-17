@@ -18,6 +18,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Scratch Off",
   description: "Scratch to reveal your fate",
+  icons: {
+    icon: [
+      {
+        rel: "icon",
+        url: "/assets/scratch-card-image.png",
+        sizes: "any",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export default async function RootLayout({

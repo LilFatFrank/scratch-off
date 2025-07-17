@@ -1,6 +1,5 @@
 "use client";
 import { useContext, useRef, useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import {
   getAssociatedTokenAddressSync,
@@ -29,6 +28,28 @@ export function ScratchDemo() {
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revealPercentage, setRevealPercentage] = useState(0);
+  
+  // Card tilt state - moved to component level
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  // Mouse handlers for card tilt
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const percentX = (x / rect.width) * 2 - 1; // -1 to 1
+    const percentY = (y / rect.height) * 2 - 1; // -1 to 1
+    setTilt({
+      x: percentY * 20, // max 20deg up/down
+      y: percentX * 20, // max 20deg left/right
+    });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
 
   // Validate environment variables
   if (!process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS) {
@@ -350,82 +371,59 @@ export function ScratchDemo() {
         </p>
       }
       <div className="max-w-md mx-auto space-y-6">
-        {(() => {
-          const cardRef = useRef<HTMLDivElement>(null);
-          const [tilt, setTilt] = useState({ x: 0, y: 0 });
+        <motion.div
+          ref={cardRef}
+          className="w-full relative"
+          animate={{
+            rotateX: tilt.x,
+            rotateY: tilt.y,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 20,
+          }}
+          style={{
+            perspective: 1000,
+          }}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* Shadow element that follows the card rotation */}
+          <div
+            className="absolute inset-0 w-[320px] h-[400px] rounded-2xl"
+            style={{
+              background: "rgba(0, 0, 0, 0.4)",
+              filter: "blur(28px)",
+              transform: "translateY(30px)",
+              zIndex: -1,
+            }}
+          />
 
-          function handleMouseMove(e: React.MouseEvent) {
-            const rect = cardRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const percentX = (x / rect.width) * 2 - 1; // -1 to 1
-            const percentY = (y / rect.height) * 2 - 1; // -1 to 1
-            setTilt({
-              x: percentY * 20, // max 20deg up/down
-              y: percentX * 20, // max 20deg left/right
-            });
-          }
-          function handleMouseLeave() {
-            setTilt({ x: 0, y: 0 });
-          }
+          {/* Scratched card on bottom */}
+          <img
+            src={"/assets/scratched-card-image.png"}
+            alt="scratched-card"
+            className="rounded-2xl select-none w-[320px] h-[400px] relative z-10 mx-auto"
+            draggable={false}
+          />
 
-          return (
-            <motion.div
-              ref={cardRef}
-              className="w-full relative"
-              animate={{
-                rotateX: tilt.x,
-                rotateY: tilt.y,
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 20,
-              }}
-              style={{
-                perspective: 1000,
-              }}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
-              {/* Shadow element that follows the card rotation */}
-              <div
-                className="absolute inset-0 w-[320px] h-[400px] rounded-2xl"
-                style={{
-                  background: "rgba(0, 0, 0, 0.4)",
-                  filter: "blur(28px)",
-                  transform: "translateY(30px)",
-                  zIndex: -1,
-                }}
-              />
-
-              {/* Scratched card on bottom */}
-              <img
-                src={"/assets/scratched-card-image.png"}
-                alt="scratched-card"
-                className="rounded-2xl select-none w-[320px] h-[400px] relative z-10 mx-auto"
-                draggable={false}
-              />
-
-              {/* Scratch card on top with percentage-based reveal */}
-              <motion.div
-                className="absolute inset-0 w-full overflow-hidden rounded-2xl z-20"
-                initial={{ height: "100%" }}
-                animate={{ height: `${100 - revealPercentage}%` }}
-                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-                style={{ pointerEvents: "none" }}
-              >
-                <img
-                  src={"/assets/scratch-card-image.png"}
-                  alt="scratch-card"
-                  className="w-[320px] h-[400px] rounded-2xl select-none mx-auto"
-                  draggable={false}
-                />
-              </motion.div>
-            </motion.div>
-          );
-        })()}
+          {/* Scratch card on top with percentage-based reveal */}
+          <motion.div
+            className="absolute inset-0 w-full overflow-hidden rounded-2xl z-20"
+            initial={{ height: "100%" }}
+            animate={{ height: `${100 - revealPercentage}%` }}
+            transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+            style={{ pointerEvents: "none" }}
+          >
+            <img
+              src={"/assets/scratch-card-image.png"}
+              alt="scratch-card"
+              className="w-[320px] h-[400px] rounded-2xl select-none mx-auto"
+              draggable={false}
+            />
+          </motion.div>
+        </motion.div>
 
         <button
           className="rounded-[100px] relative z-[52] border-white/90 group-hover:border-white p-[2px] border w-full cursor-pointer disabled:cursor-not-allowed disabled:group-hover:bg-white/90 disabled:border-white/90"
