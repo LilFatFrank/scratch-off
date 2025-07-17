@@ -113,16 +113,6 @@ export default function Home() {
                   <div
                     key={ur.id}
                     className="flex justify-between items-center"
-                    {...(ur.payoutTx
-                      ? {
-                          onClick: () =>
-                            window.open(
-                              `https://solscan.io/tx/${ur.payoutTx}`,
-                              "_blank",
-                              "noreferrer noopener nofollower"
-                            ),
-                        }
-                      : {})}
                   >
                     <p
                       className={`text-[14px] font-medium leading-[90%] ${
@@ -145,11 +135,7 @@ export default function Home() {
                     </p>
                   </div>
                 ))
-              ) : (
-                <p className="text-[14px] text-white/60 text-center">
-                  No history yet
-                </p>
-              )}
+              ) : null}
             </div>
           </motion.div>
         )}
