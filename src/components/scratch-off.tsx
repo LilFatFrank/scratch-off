@@ -468,7 +468,7 @@ export function ScratchDemo() {
             className="fixed w-full h-dvh top-0 bottom-0 left-0 right-0 object-cover"
           />
           <p className="font-bold text-center text-white text-[46px] leading-[90%] italic mb-[200px] rotate-[-4deg]">
-            You've won
+            You&apos;ve won
             <br />
             <span className="font-bold text-white text-[94px] leading-[90%] italic">
               ${prizeAmount}!
