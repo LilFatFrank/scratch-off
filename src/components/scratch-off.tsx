@@ -18,7 +18,11 @@ import { sdk } from "@farcaster/miniapp-sdk";
 
 const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS!;
 
-export function ScratchDemo() {
+interface ScratchDemoProps {
+  onGameComplete?: () => void;
+}
+
+export function ScratchDemo({ onGameComplete }: ScratchDemoProps) {
   const [state, dispatch] = useContext(AppContext);
   const [isLoading, setIsLoading] = useState(false);
   const [gameState, setGameState] = useState<
@@ -28,6 +32,7 @@ export function ScratchDemo() {
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [revealPercentage, setRevealPercentage] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState<string>("");
   
   // Card tilt state - moved to component level
   const cardRef = useRef<HTMLDivElement>(null);
@@ -86,6 +91,7 @@ export function ScratchDemo() {
 
     try {
       setRevealPercentage(30);
+      setLoadingMessage("Sending payment...");
 
       // Send USDC payment
       await sendUsdcPayment();
@@ -100,9 +106,10 @@ export function ScratchDemo() {
         type: SET_APP_BACKGROUND,
         payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.ERROR})`,
       });
-      setGameState("idle");
-      setRevealPercentage(0);
-      setIsLoading(false); // Ensure loading state is reset on error
+              setGameState("idle");
+        setRevealPercentage(0);
+        setLoadingMessage("");
+        setIsLoading(false); // Ensure loading state is reset on error
     }
   };
 
@@ -163,6 +170,7 @@ export function ScratchDemo() {
       const response = await provider?.signAndSendTransaction({
         transaction,
       });
+      setLoadingMessage("Confirming payment...");
 
       if (!response) {
         throw new Error("Transaction failed");
@@ -184,6 +192,7 @@ export function ScratchDemo() {
 
       console.log("Transaction successful!");
       setRevealPercentage(60);
+      setLoadingMessage("Peeling back the odds...");
       setGameState("processing");
       await processPrize(response.signature);
     } catch (error) {
@@ -237,6 +246,7 @@ export function ScratchDemo() {
 
           console.log(`Transaction successful on retry attempt ${attempt}!`);
           setRevealPercentage(60);
+          setLoadingMessage("Processing your prize...");
           setGameState("processing");
           await processPrize(retryTx.signature);
           return; // Success, exit retry loop
@@ -332,12 +342,15 @@ export function ScratchDemo() {
         setGameState("complete");
         // Reveal 100% after processing complete
         setRevealPercentage(100);
+        setLoadingMessage("");
         setIsLoading(false); // Reset loading state on success
+        onGameComplete?.();
       } else {
         throw new Error(result.error || "Failed to process prize");
       }
     } catch (error) {
       console.error("Prize processing error:", error);
+      setLoadingMessage("");
       setIsLoading(false); // Reset loading state on error
       throw error;
     }
@@ -349,6 +362,7 @@ export function ScratchDemo() {
     setShowBlurOrverlay(false);
     setGameState("idle");
     setRevealPercentage(0);
+    setLoadingMessage("");
     setIsLoading(false);
     dispatch({
       type: SET_APP_BACKGROUND,
@@ -450,6 +464,11 @@ export function ScratchDemo() {
             </span>
           </div>
         </button>
+        {loadingMessage && (
+          <p className="text-white text-center text-[14px] font-medium">
+            {loadingMessage}
+          </p>
+        )}
         {error && (
           <p className="text-white text-center text-[12px] break-all">
             {error}

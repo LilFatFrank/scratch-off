@@ -4,7 +4,6 @@ import { getFarcasterMetadata } from '../../../lib/utils';
 export async function GET() {
   try {
     const config = await getFarcasterMetadata();
-    console.log(config);
     return NextResponse.json(config);
   } catch (error) {
     console.error('Error generating metadata:', error);

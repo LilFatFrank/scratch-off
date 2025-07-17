@@ -6,6 +6,7 @@ import {
   createTransferCheckedInstruction 
 } from "@solana/spl-token";
 import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { storeReveal } from "../../../lib/database";
 
 const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // Mainnet USDC
 
@@ -126,6 +127,19 @@ export async function POST(request: NextRequest) {
     const prizeAmount = drawPrize();
     
     if (prizeAmount === 0) {
+      // Store the reveal for loss
+      try {
+        await storeReveal({
+          userWallet,
+          prizeAmount,
+          paymentTx,
+          payoutTx: undefined,
+          won: false,
+        });
+      } catch (error) {
+        console.error("Failed to store reveal:", error);
+      }
+      
       return NextResponse.json({
         success: true,
         prizeAmount: 0,
@@ -200,6 +214,19 @@ export async function POST(request: NextRequest) {
 
     if (confirmation.value.err) {
       throw new Error("Payout transaction failed");
+    }
+
+    // Store the reveal with payout transaction
+    try {
+      await storeReveal({
+        userWallet,
+        prizeAmount,
+        paymentTx,
+        payoutTx: tx,
+        won: true,
+      });
+    } catch (error) {
+      console.error("Failed to store reveal:", error);
     }
 
     return NextResponse.json({

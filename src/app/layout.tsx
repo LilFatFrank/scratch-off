@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Scratch Off",
-  description: "Scratch to reveal your fate",
+  description: "Scratch to win big!",
   icons: {
     icon: [
       {

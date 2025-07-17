@@ -26,7 +26,7 @@ export const APP_NAME = 'Scratch Off';
  * A brief description of the mini app's functionality.
  * Used in app store listings and metadata.
  */
-export const APP_DESCRIPTION = 'Scratch to reveal your fate';
+export const APP_DESCRIPTION = 'Scratch to win big!';
 
 /**
  * The primary category for the mini app.
