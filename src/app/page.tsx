@@ -96,46 +96,59 @@ export default function Home() {
                 </button>
               </div>
               <hr className="border-[0.5px] border-white/10" />
-              {userReveals.length
-                ? userReveals.map((ur) => (
-                    <div
-                      key={ur.id}
-                      className="flex justify-between items-center"
-                      {...(ur.payoutTx
-                        ? {
-                            onClick: () =>
-                              window.open(
-                                `https://solscan.io/tx/${ur.payoutTx}`,
-                                "_blank",
-                                "noreferrer noopener nofollower"
-                              ),
-                          }
-                        : {})}
+              {loadingReveals ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 bg-[#fff]/20 rounded w-[100px] animate-pulse" />
+                    <div className="h-4 bg-[#fff]/20 rounded w-[150px] animate-pulse" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="h-4 bg-[#fff]/20 rounded w-[100px] animate-pulse" />
+                    <div className="h-4 bg-[#fff]/20 rounded w-[150px] animate-pulse" />
+                  </div>
+                </>
+              ) : userReveals.length ? (
+                userReveals.map((ur) => (
+                  <div
+                    key={ur.id}
+                    className="flex justify-between items-center"
+                    {...(ur.payoutTx
+                      ? {
+                          onClick: () =>
+                            window.open(
+                              `https://solscan.io/tx/${ur.payoutTx}`,
+                              "_blank",
+                              "noreferrer noopener nofollower"
+                            ),
+                        }
+                      : {})}
+                  >
+                    <p
+                      className={`text-[14px] font-medium leading-[90%] ${
+                        ur.prizeAmount === 0 ? "text-[#fff]/60" : "text-[#fff]"
+                      }`}
                     >
-                      <p
-                        className={`text-[14px] font-medium leading-[90%] ${
-                          ur.prizeAmount === 0
-                            ? "text-[#fff]/60"
-                            : "text-[#fff]"
-                        }`}
-                      >
-                        {ur.prizeAmount === 0
-                          ? "No win! :("
-                          : `Won $${ur.prizeAmount}!`}
-                      </p>
-                      <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
-                        {new Date(ur.timestamp).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
-                      </p>
-                    </div>
-                  ))
-                : null}
+                      {ur.prizeAmount === 0
+                        ? "No win! :("
+                        : `Won $${ur.prizeAmount}!`}
+                    </p>
+                    <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
+                      {new Date(ur.timestamp).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[14px] text-white/60 text-center">
+                  No history yet
+                </p>
+              )}
             </div>
           </motion.div>
         )}
