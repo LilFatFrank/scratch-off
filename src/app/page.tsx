@@ -9,6 +9,7 @@ export default function Home() {
   const [state] = useContext(AppContext);
   const [showInfo, setShowInfo] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userReveals, setUserReveals] = useState<any[]>([]);
   const [loadingReveals, setLoadingReveals] = useState(false);
 
