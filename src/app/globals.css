@@ -29,6 +29,11 @@
   --foreground: #171717;
 }
 
+@font-face {
+  font-family: "ABCGaisyr";
+  src: url("/fonts/ABCGaisyrItalicVariable-Trial.ttf") format("truetype");
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -39,7 +44,7 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  font-family: var(--font-geist-sans), 'Inter', Helvetica, Arial, sans-serif;
 }
 
 * {

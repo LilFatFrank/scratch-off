@@ -95,14 +95,8 @@ async function verifyPayment(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log("API received body:", body);
     
     const { userWallet, paymentTx } = body;
-
-    console.log("Extracted values:", {
-      userWallet: userWallet,
-      paymentTx: paymentTx,
-    });
 
     if (!userWallet || !paymentTx) {
       console.log("Missing fields:", {

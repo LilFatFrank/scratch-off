@@ -21,6 +21,10 @@ export default {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+  			mono: ['var(--font-geist-mono)', 'monospace'],
+  		},
   		colors: {
   			// Main theme color - change this to update the entire app's color scheme
   			primary: "#8b5cf6", // Main brand color

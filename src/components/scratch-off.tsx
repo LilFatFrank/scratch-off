@@ -364,7 +364,7 @@ export function ScratchDemo() {
     <>
       {
         <p
-          className="text-white/40 text-center text-[30px] font-bold italic mb-5 rotate-[-4deg]"
+          className="font-[ABCGaisyr] text-white/40 text-center text-[30px] font-bold italic mb-5 rotate-[-4deg]"
           style={{ visibility: prizeAmount === 0 ? "visible" : "hidden" }}
         >
           No win!
@@ -467,10 +467,10 @@ export function ScratchDemo() {
             alt="winner"
             className="fixed w-full h-dvh top-0 bottom-0 left-0 right-0 object-cover"
           />
-          <p className="font-bold text-center text-white text-[46px] leading-[90%] italic mb-[200px] rotate-[-4deg]">
+          <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[90%] italic rotate-[-6deg]">
             You&apos;ve won
             <br />
-            <span className="font-bold text-white text-[94px] leading-[90%] italic">
+            <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[90%] italic">
               ${prizeAmount}!
             </span>
           </p>
