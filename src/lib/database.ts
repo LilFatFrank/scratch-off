@@ -37,8 +37,6 @@ export async function storeReveal(reveal: Omit<PastReveal, 'id' | 'timestamp'>) 
     return null;
   }
 
-  console.log({reveal});
-
   const id = `reveal:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
   const timestamp = new Date();
   
@@ -55,7 +53,6 @@ export async function storeReveal(reveal: Omit<PastReveal, 'id' | 'timestamp'>) 
     
     // Keep only last 3 reveals per user (cleanup old entries)
     await redis.zremrangebyrank(userKey, 0, -4);
-    console.log({fullReveal})
     return fullReveal;
   } catch (error) {
     console.error('Failed to store reveal:', error);
