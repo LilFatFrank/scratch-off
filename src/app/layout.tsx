@@ -28,6 +28,22 @@ export const metadata: Metadata = {
       },
     ],
   },
+  other: {
+    "fc:frame": JSON.stringify({
+      version: "next",
+      imageUrl: "https://scratch-off-xi.vercel.app/assets/splash-image.png",
+      button: {
+        title: "Scratch Off",
+        action: {
+          type: "launch_frame",
+          name: "Scratch Off",
+          url: "https://scratch-off-xi.vercel.app",
+          splashImageUrl:
+            "https://scratch-off-xi.vercel.app/assets/splash-image.png",
+        },
+      },
+    }),
+  },
 };
 
 export default async function RootLayout({
