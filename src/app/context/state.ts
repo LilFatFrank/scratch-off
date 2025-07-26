@@ -1,8 +1,11 @@
+import { User } from "../interface/user";
+
 export interface AppState {
   appBackground: string;
   appColor: string;
   hasProvider: boolean;
   publicKey: string;
+  user: User | null;
 }
 
 const initialState: AppState = {
@@ -10,6 +13,7 @@ const initialState: AppState = {
   appColor: "#7727DE",
   hasProvider: false,
   publicKey: "",
+  user: null,
 };
 
 export default initialState;

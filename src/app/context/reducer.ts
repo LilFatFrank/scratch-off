@@ -1,5 +1,5 @@
 import { Action } from "./action";
-import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_HAS_PROVIDER, SET_PUBLIC_KEY } from "./actions";
+import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_HAS_PROVIDER, SET_PUBLIC_KEY, SET_USER } from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -23,6 +23,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         publicKey: action.payload
+      }
+    case SET_USER:
+      return {
+        ...state,
+        user: action.payload
       }
     default:
       return state;

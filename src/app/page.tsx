@@ -1,12 +1,28 @@
 "use client";
 import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ScratchDemo } from "~/components/scratch-off";
+import CardGrid from "~/components/card-grid";
+import ScratchOff from "~/components/scratch-off";
 import Image from "next/image";
 import { AppContext } from "./context";
 
+interface Card {
+  id: string;
+  user_wallet: string;
+  payment_tx: string;
+  prize_amount: number;
+  scratched_at?: string;
+  claimed: boolean;
+  payout_tx?: string;
+  created_at: string;
+  scratched: boolean;
+}
+
 export default function Home() {
   const [state] = useContext(AppContext);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,40 +49,169 @@ export default function Home() {
     }
   };
 
+  // Mock data for demonstration - replace with actual API call
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      const mockCards: Card[] = [
+        {
+          id: "1",
+          user_wallet: "0x123...",
+          payment_tx: "0xabc123def456",
+          prize_amount: 100,
+          scratched_at: "2024-01-15T10:30:00Z",
+          claimed: true,
+          payout_tx: "0xdef789abc123",
+          created_at: "2024-01-15T09:00:00Z",
+          scratched: true,
+        },
+        {
+          id: "2",
+          user_wallet: "0x123...",
+          payment_tx: "0xabc123def457",
+          prize_amount: 0,
+          scratched_at: "2024-01-16T14:20:00Z",
+          claimed: false,
+          created_at: "2024-01-16T13:00:00Z",
+          scratched: true,
+        },
+        {
+          id: "3",
+          user_wallet: "0x123...",
+          payment_tx: "0xabc123def458",
+          prize_amount: 0,
+          created_at: "2024-01-17T11:00:00Z",
+          claimed: false,
+          scratched: false,
+        },
+        {
+          id: "4",
+          user_wallet: "0x123...",
+          payment_tx: "0xabc123def459",
+          prize_amount: 0,
+          created_at: "2024-01-18T12:00:00Z",
+          claimed: false,
+          scratched: false,
+        },
+      ];
+      setCards(mockCards);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
   useEffect(() => {
     fetchUserReveals(state.publicKey);
   }, [state.publicKey]);
 
+  const handleCardSelect = (card: Card) => {
+    setSelectedCard(card);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedCard(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your cards...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-md w-full relative">
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between w-full">
-        <button
-          className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-          onClick={() => setShowHistory(!showHistory)}
-        >
-          <img
-            src={"/assets/history-icon.svg"}
-            alt="history-icon"
-            className="w-6 h-6"
-          />
-        </button>
+        {!selectedCard ? (
+          <button
+            className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            <Image
+              src={"/assets/history-icon.svg"}
+              alt="history-icon"
+              unoptimized
+              priority
+              width={24}
+              height={24}
+            />
+          </button>
+        ) : (
+          <button
+            className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
+            onClick={handleCloseModal}
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="#fff"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        )}
         <button
           className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
           onClick={() => setShowInfo(!showInfo)}
         >
-          <img
+          <Image
             src={"/assets/info-icon.svg"}
             alt="info-icon"
-            className="w-6 h-6"
+            unoptimized
+            priority
+            width={24}
+            height={24}
           />
         </button>
       </div>
-      <ScratchDemo onGameComplete={() => fetchUserReveals(state.publicKey)} />
+      <div className="flex-1 flex flex-col h-full">
+        <AnimatePresence mode="wait">
+          {false ? (
+            <motion.div
+              key="grid"
+              transition={{ duration: 0.3 }}
+              className="flex-1 flex items-center justify-center py-5 overflow-auto"
+            >
+              <CardGrid cards={cards} onCardSelect={handleCardSelect} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="detail"
+              transition={{ duration: 0.3 }}
+              className="flex-1 flex items-center justify-center py-5"
+            >
+              <ScratchOff cardData={selectedCard} isDetailView={true} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="flex items-center justify-center gap-3">
+          <button className="border border-[#fff]/10 rounded-[8px] p-[10px]">
+            <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
+              Cards 1<span className="text-[#fff]/40">/5</span>
+            </p>
+          </button>
+          <button className="border border-[#fff] rounded-[8px] p-[10px]">
+            <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
+              Buy
+            </p>
+          </button>
+        </div>
+      </div>
 
       <AnimatePresence>
         {showHistory && (
           <motion.div
-            className="absolute bg-black/80 backdrop-blur-sm bottom-[-10px] w-full rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -143,7 +288,7 @@ export default function Home() {
       <AnimatePresence>
         {showInfo && (
           <motion.div
-            className="absolute bg-black/80 backdrop-blur-sm bottom-[-10px] w-full rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
