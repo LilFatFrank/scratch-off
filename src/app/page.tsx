@@ -16,6 +16,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { sdk } from "@farcaster/miniapp-sdk";
+import { USDC_MINT } from "~/lib/constants";
 
 interface Card {
   id: string;
@@ -34,6 +35,7 @@ export default function Home() {
   const [state] = useContext(AppContext);
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -110,7 +112,7 @@ export default function Home() {
     }
 
     try {
-      const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+      setBuyingCards(true);
       const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
 
       if (!RECIPIENT_ADDRESS) {
@@ -225,6 +227,8 @@ export default function Home() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
+    } finally {
+      setBuyingCards(false);
     }
   };
 
@@ -310,7 +314,7 @@ export default function Home() {
               <ScratchOff
                 cardData={selectedCard}
                 isDetailView={true}
-                onPrizeRevealed={(prizeAmount) => {
+                onPrizeRevealed={() => {
                   refreshCards();
                   refreshReveals();
                 }}
@@ -556,7 +560,11 @@ export default function Home() {
                 onClick={() => buyCards(numBuyCards)}
                 disabled={buyingCards}
               >
-                Buy Card{numBuyCards > 1 ? "s" : ""}
+                {buyingCards ? (
+                  <>Please wait...</>
+                ) : (
+                  <>Buy Card{numBuyCards > 1 ? "s" : ""}</>
+                )}
               </button>
             </div>
           </motion.div>
