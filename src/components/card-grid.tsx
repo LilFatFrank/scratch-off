@@ -12,6 +12,7 @@ interface Card {
   payout_tx?: string;
   created_at: string;
   scratched: boolean;
+  card_no: number;
 }
 
 interface CardGridProps {
@@ -21,7 +22,8 @@ interface CardGridProps {
 
 export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
   return (
-      <div className="grid grid-cols-4 gap-4 mx-auto h-full">
+    <div className="h-full overflow-auto">
+      <div className="grid grid-cols-4 gap-4 mx-auto">
         {cards.map((card, index) => (
           <motion.div
             key={card.id}
@@ -76,5 +78,6 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
           </motion.div>
         ))}
       </div>
+    </div>
   );
 }

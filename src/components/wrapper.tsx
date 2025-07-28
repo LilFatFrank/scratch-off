@@ -11,7 +11,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       style={{ background: state.appBackground }}
     >
       <div className="h-full max-w-[400px] flex flex-col items-center p-4 mx-auto">
-      {children}
+        {children}
       </div>
     </div>
   );

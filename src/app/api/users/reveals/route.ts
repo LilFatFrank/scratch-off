@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserReveals } from "../../../lib/database";
+import { supabaseAdmin } from "~/lib/supabaseAdmin";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,12 +13,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user's reveals and stats
-    const reveals = await getUserReveals(userWallet, 3);
+    // Get user's reveals from Supabase
+    const { data: reveals, error } = await supabaseAdmin
+      .from('reveals')
+      .select('*')
+      .eq('user_wallet', userWallet)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (error) {
+      console.error('Error fetching user reveals:', error);
+      return NextResponse.json(
+        { error: "Failed to fetch user reveals" },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      reveals,
+      reveals: reveals || [],
     });
 
   } catch (error) {

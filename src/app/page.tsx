@@ -5,6 +5,17 @@ import CardGrid from "~/components/card-grid";
 import ScratchOff from "~/components/scratch-off";
 import Image from "next/image";
 import { AppContext } from "./context";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferCheckedInstruction,
+} from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 interface Card {
   id: string;
@@ -16,6 +27,7 @@ interface Card {
   payout_tx?: string;
   created_at: string;
   scratched: boolean;
+  card_no: number;
 }
 
 export default function Home() {
@@ -27,6 +39,9 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userReveals, setUserReveals] = useState<any[]>([]);
+  const [numBuyCards, setNumBuyCards] = useState(1);
+  const [buyingCards, setBuyingCards] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
   const [loadingReveals, setLoadingReveals] = useState(false);
 
   // Fetch user reveals when wallet connects
@@ -36,7 +51,7 @@ export default function Home() {
     setLoadingReveals(true);
     try {
       const response = await fetch(
-        `/api/user-reveals?userWallet=${userWallet}`
+        `/api/users/reveals?userWallet=${userWallet}`
       );
       const data = await response.json();
       if (data.success) {
@@ -49,55 +64,169 @@ export default function Home() {
     }
   };
 
-  // Mock data for demonstration - replace with actual API call
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockCards: Card[] = [
-        {
-          id: "1",
-          user_wallet: "0x123...",
-          payment_tx: "0xabc123def456",
-          prize_amount: 100,
-          scratched_at: "2024-01-15T10:30:00Z",
-          claimed: true,
-          payout_tx: "0xdef789abc123",
-          created_at: "2024-01-15T09:00:00Z",
-          scratched: true,
-        },
-        {
-          id: "2",
-          user_wallet: "0x123...",
-          payment_tx: "0xabc123def457",
-          prize_amount: 0,
-          scratched_at: "2024-01-16T14:20:00Z",
-          claimed: false,
-          created_at: "2024-01-16T13:00:00Z",
-          scratched: true,
-        },
-        {
-          id: "3",
-          user_wallet: "0x123...",
-          payment_tx: "0xabc123def458",
-          prize_amount: 0,
-          created_at: "2024-01-17T11:00:00Z",
-          claimed: false,
-          scratched: false,
-        },
-        {
-          id: "4",
-          user_wallet: "0x123...",
-          payment_tx: "0xabc123def459",
-          prize_amount: 0,
-          created_at: "2024-01-18T12:00:00Z",
-          claimed: false,
-          scratched: false,
-        },
-      ];
-      setCards(mockCards);
+  // Fetch user cards when wallet connects
+  const fetchUserCards = async (userWallet: string) => {
+    if (!userWallet) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/cards/user?userWallet=${userWallet}`);
+      const data = await response.json();
+      if (data.success) {
+        console.log({ cards: data.cards });
+        setCards(data.cards);
+      } else {
+        console.error("Failed to fetch user cards:", data.error);
+        setCards([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user cards:", error);
+      setCards([]);
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
+  // Fetch cards when wallet connects
+  useEffect(() => {
+    fetchUserCards(state.publicKey);
+  }, [state.publicKey]);
+
+  // Function to refresh cards (can be called after buying new cards)
+  const refreshCards = () => {
+    fetchUserCards(state.publicKey);
+  };
+
+  // Function to refresh reveals (can be called after processing a prize)
+  const refreshReveals = () => {
+    fetchUserReveals(state.publicKey);
+  };
+
+  // Buy cards function
+  const buyCards = async (numberOfCards: number) => {
+    if (!state.publicKey) {
+      console.error("No wallet connected");
+      return;
+    }
+
+    try {
+      const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+      const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
+
+      if (!RECIPIENT_ADDRESS) {
+        console.error("Admin wallet address not configured");
+        return;
+      }
+
+      const connection = new Connection(
+        process.env.NEXT_PUBLIC_RPC || "https://api.mainnet-beta.solana.com"
+      );
+      const recipient = new PublicKey(RECIPIENT_ADDRESS);
+      const mint = new PublicKey(USDC_MINT);
+
+      // Create transaction
+      const transaction = new Transaction();
+
+      // Get token accounts
+      const userTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        new PublicKey(state.publicKey)
+      );
+      const recipientTokenAccount = getAssociatedTokenAddressSync(
+        mint,
+        recipient
+      );
+
+      // Add create token account instruction for recipient if needed
+      transaction.add(
+        createAssociatedTokenAccountIdempotentInstruction(
+          new PublicKey(state.publicKey),
+          recipientTokenAccount,
+          recipient,
+          mint,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        )
+      );
+
+      // Add transfer instruction (1 USDC per card = 1,000,000 units with 6 decimals)
+      const amountPerCard = 1_000_000; // 1 USDC
+      const totalAmount = amountPerCard * numberOfCards;
+
+      transaction.add(
+        createTransferCheckedInstruction(
+          userTokenAccount,
+          mint,
+          recipientTokenAccount,
+          new PublicKey(state.publicKey),
+          totalAmount,
+          6
+        )
+      );
+
+      // Get fresh blockhash right before sending
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash("finalized");
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = new PublicKey(state.publicKey);
+
+      console.log("Sending transaction...");
+      const provider = await sdk.wallet.getSolanaProvider();
+      const response = await provider?.signAndSendTransaction({
+        transaction,
+      });
+
+      if (!response) {
+        throw new Error("Transaction failed");
+      }
+
+      // Wait for confirmation
+      const confirmation = await connection.confirmTransaction(
+        {
+          signature: response.signature,
+          blockhash,
+          lastValidBlockHeight,
+        },
+        "confirmed"
+      );
+
+      if (confirmation.value.err) {
+        throw new Error("Transaction failed");
+      }
+
+      console.log("Transaction successful! Signature:", response.signature);
+
+      // Send request to backend to create cards
+      const backendResponse = await fetch("/api/cards/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userWallet: state.publicKey,
+          paymentTx: response.signature,
+          numberOfCards,
+        }),
+      });
+
+      if (!backendResponse.ok) {
+        const errorData = await backendResponse.json();
+        throw new Error(errorData.error || "Failed to create cards");
+      }
+
+      const result = await backendResponse.json();
+      console.log("Cards created successfully:", result);
+
+      // Refresh cards list
+      refreshCards();
+      setShowBuyModal(false);
+    } catch (error) {
+      console.error("Error buying cards:", error);
+      alert(
+        `Failed to buy cards: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
 
   useEffect(() => {
     fetchUserReveals(state.publicKey);
@@ -111,19 +240,8 @@ export default function Home() {
     setSelectedCard(null);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your cards...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col w-full">
       <div className="flex items-center justify-between w-full">
         {!selectedCard ? (
           <button
@@ -141,7 +259,7 @@ export default function Home() {
           </button>
         ) : (
           <button
-            className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
+            className="p-2 relative z-[52] rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
             onClick={handleCloseModal}
           >
             <svg
@@ -175,11 +293,11 @@ export default function Home() {
       </div>
       <div className="flex-1 flex flex-col h-full">
         <AnimatePresence mode="wait">
-          {false ? (
+          {!selectedCard && cards.length ? (
             <motion.div
               key="grid"
               transition={{ duration: 0.3 }}
-              className="flex-1 flex items-center justify-center py-5 overflow-auto"
+              className="flex-1 flex items-center justify-center py-5"
             >
               <CardGrid cards={cards} onCardSelect={handleCardSelect} />
             </motion.div>
@@ -189,7 +307,14 @@ export default function Home() {
               transition={{ duration: 0.3 }}
               className="flex-1 flex items-center justify-center py-5"
             >
-              <ScratchOff cardData={selectedCard} isDetailView={true} />
+              <ScratchOff
+                cardData={selectedCard}
+                isDetailView={true}
+                onPrizeRevealed={(prizeAmount) => {
+                  refreshCards();
+                  refreshReveals();
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -197,10 +322,21 @@ export default function Home() {
         <div className="flex items-center justify-center gap-3">
           <button className="border border-[#fff]/10 rounded-[8px] p-[10px]">
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
-              Cards 1<span className="text-[#fff]/40">/5</span>
+              Cards{" "}
+              {selectedCard ? (
+                <>
+                  {selectedCard.card_no}
+                  <span className="text-[#fff]/40">/{cards.length}</span>
+                </>
+              ) : (
+                cards.length
+              )}
             </p>
           </button>
-          <button className="border border-[#fff] rounded-[8px] p-[10px]">
+          <button
+            className="border border-[#fff] rounded-[8px] p-[10px]"
+            onClick={() => setShowBuyModal(true)}
+          >
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
               Buy
             </p>
@@ -261,15 +397,15 @@ export default function Home() {
                   >
                     <p
                       className={`text-[14px] font-medium leading-[90%] ${
-                        ur.prizeAmount === 0 ? "text-[#fff]/60" : "text-[#fff]"
+                        ur.prize_amount === 0 ? "text-[#fff]/60" : "text-[#fff]"
                       }`}
                     >
-                      {ur.prizeAmount === 0
+                      {ur.prize_amount === 0
                         ? "No win! :("
-                        : `Won $${ur.prizeAmount}!`}
+                        : `Won $${ur.prize_amount}!`}
                     </p>
                     <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
-                      {new Date(ur.timestamp).toLocaleDateString("en-GB", {
+                      {new Date(ur.created_at).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
@@ -329,6 +465,99 @@ export default function Home() {
                 everyone can enjoy, starting with the simple joy of scratch
                 cards - a game that billions already know and love
               </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showBuyModal && (
+          <motion.div
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+              duration: 0.3,
+            }}
+          >
+            <div className="relative space-y-6">
+              <div className="flex justify-between items-center">
+                <p className="text-[18px] leading-[90%] text-white font-semibold">
+                  Buy cards
+                </p>
+                <button
+                  className="absolute top-[-16px] right-[-16px] p-2 rounded-full bg-white/[0.09] cursor-pointer"
+                  onClick={
+                    buyingCards ? undefined : () => setShowBuyModal(false)
+                  }
+                >
+                  <Image
+                    src={"/assets/cross-icon.svg"}
+                    alt="cross-icon"
+                    width={18}
+                    height={18}
+                    unoptimized
+                    priority
+                  />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 5, 10, 100, 200, 1000].map((amount) => (
+                  <button
+                    key={amount}
+                    className={`py-[14px] px-[18px] rounded-[46px] transition-colors ${
+                      numBuyCards === amount
+                        ? "bg-white shadow-lg shadow-gray-600/50 hover:bg-white"
+                        : "bg-white/10 hover:bg-white/20"
+                    }`}
+                    onClick={() => {
+                      setNumBuyCards(amount);
+                    }}
+                  >
+                    <p
+                      className={`text-[15px] font-semibold font-mono leading-[100%] ${
+                        numBuyCards === amount ? "text-[#090909]" : "text-white"
+                      }`}
+                    >
+                      {amount}
+                    </p>
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-4">
+                    <span className="text-white/60 font-normal text-[15px] leading-[120%]">
+                      1x
+                    </span>
+                    <span className="text-white font-normal text-[15px] leading-[120%]">
+                      Scratch-off Card
+                    </span>
+                  </div>
+                  <span className="text-white font-medium text-[15px] leading-[120%]">
+                    $1
+                  </span>
+                </div>
+                <hr className="border-[0.5px] border-white/10" />
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-white font-normal text-[15px] leading-[120%]">
+                    Total
+                  </span>
+                  <span className="text-white font-medium text-[15px] leading-[120%]">
+                    ${numBuyCards}
+                  </span>
+                </div>
+              </div>
+              <button
+                className="w-full h-[48px] text-black font-semibold text-[14px] leading-[90%] rounded-[40px] shadow-lg shadow-gray-600/50 bg-white disabled:bg-white/80 disabled:cursor-not-allowed"
+                onClick={() => buyCards(numBuyCards)}
+                disabled={buyingCards}
+              >
+                Buy Card{numBuyCards > 1 ? "s" : ""}
+              </button>
             </div>
           </motion.div>
         )}

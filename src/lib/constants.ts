@@ -128,3 +128,7 @@ export const APP_COLORS = {
 };
 
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+export const CANVAS_WIDTH = 343;
+export const CANVAS_HEIGHT = 418;
+export const SCRATCH_RADIUS = 24;
