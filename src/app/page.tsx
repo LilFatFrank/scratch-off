@@ -235,6 +235,7 @@ export default function Home() {
         throw new Error(errorData.error || "Failed to create cards");
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await backendResponse.json();
 
       // Refresh cards list
