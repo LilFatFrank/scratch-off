@@ -185,7 +185,7 @@ export default function ScratchOff({
                   .then((response) => response.json())
                   .then((processData) => {
                     if (processData.success) {
-                      console.log("Prize processed:", processData);
+
                       onPrizeRevealed?.(data.prizeAmount);
                     }
                   })

@@ -50,7 +50,7 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
                   width: 80,
                   height: 102,
                   background: "rgba(0, 0, 0, 0.4)",
-                  filter: "blur(28px)",
+                  filter: "blur(8px)",
                   borderRadius: 4,
                   zIndex: 0,
                 }}

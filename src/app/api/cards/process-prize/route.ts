@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
     const newTotalWins = (user.total_wins || 0) + (prizeAmount > 0 ? 1 : 0);
     const newAmountWon = (user.amount_won || 0) + prizeAmount;
 
+    console.log({ newAmountWon });
+
     const { error: userUpdateError } = await supabaseAdmin
       .from('users')
       .update({

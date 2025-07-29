@@ -17,6 +17,7 @@ import {
 } from "@solana/spl-token";
 import { sdk } from "@farcaster/miniapp-sdk";
 import { USDC_MINT } from "~/lib/constants";
+import { SET_USER } from "./context/actions";
 
 interface Card {
   id: string;
@@ -32,7 +33,7 @@ interface Card {
 }
 
 export default function Home() {
-  const [state] = useContext(AppContext);
+  const [state, dispatch] = useContext(AppContext);
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -44,7 +45,23 @@ export default function Home() {
   const [numBuyCards, setNumBuyCards] = useState(1);
   const [buyingCards, setBuyingCards] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
+  const [userInfoModal, setUserInfoModal] = useState(false);
   const [loadingReveals, setLoadingReveals] = useState(false);
+
+  // Fetch user info when wallet connects
+  const fetchUserInfo = async (userWallet: string) => {
+    if (!userWallet) return;
+
+    try {
+      const response = await fetch(`/api/users/get?userWallet=${userWallet}`);
+      const data = await response.json();
+      if (data.success && data.user) {
+        dispatch({ type: SET_USER, payload: data.user });
+      }
+    } catch (error) {
+      console.error("Failed to fetch user info:", error);
+    }
+  };
 
   // Fetch user reveals when wallet connects
   const fetchUserReveals = async (userWallet: string) => {
@@ -75,7 +92,6 @@ export default function Home() {
       const response = await fetch(`/api/cards/user?userWallet=${userWallet}`);
       const data = await response.json();
       if (data.success) {
-        console.log({ cards: data.cards });
         setCards(data.cards);
       } else {
         console.error("Failed to fetch user cards:", data.error);
@@ -91,7 +107,10 @@ export default function Home() {
 
   // Fetch cards when wallet connects
   useEffect(() => {
-    fetchUserCards(state.publicKey);
+    if (state.publicKey) {
+      fetchUserCards(state.publicKey);
+      fetchUserInfo(state.publicKey);
+    }
   }, [state.publicKey]);
 
   // Function to refresh cards (can be called after buying new cards)
@@ -102,6 +121,11 @@ export default function Home() {
   // Function to refresh reveals (can be called after processing a prize)
   const refreshReveals = () => {
     fetchUserReveals(state.publicKey);
+  };
+
+  // Function to refresh user info (can be called after processing a prize)
+  const refreshUserInfo = () => {
+    fetchUserInfo(state.publicKey);
   };
 
   // Buy cards function
@@ -172,7 +196,6 @@ export default function Home() {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = new PublicKey(state.publicKey);
 
-      console.log("Sending transaction...");
       const provider = await sdk.wallet.getSolanaProvider();
       const response = await provider?.signAndSendTransaction({
         transaction,
@@ -196,8 +219,6 @@ export default function Home() {
         throw new Error("Transaction failed");
       }
 
-      console.log("Transaction successful! Signature:", response.signature);
-
       // Send request to backend to create cards
       const backendResponse = await fetch("/api/cards/buy", {
         method: "POST",
@@ -215,7 +236,6 @@ export default function Home() {
       }
 
       const result = await backendResponse.json();
-      console.log("Cards created successfully:", result);
 
       // Refresh cards list
       refreshCards();
@@ -282,6 +302,17 @@ export default function Home() {
           </button>
         )}
         <button
+          className="px-6 border border-white/10 rounded-[48px] h-[42px] flex items-center justify-center gap-2"
+          onClick={() => setUserInfoModal(true)}
+        >
+          <span className="text-[16px] leading-[90%] font-medium text-white/40">
+            Won
+          </span>
+          <span className="text-[16px] leading-[90%] font-medium text-white">
+            ${state?.user?.amount_won || 0}
+          </span>
+        </button>
+        <button
           className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
           onClick={() => setShowInfo(!showInfo)}
         >
@@ -317,13 +348,14 @@ export default function Home() {
                 onPrizeRevealed={() => {
                   refreshCards();
                   refreshReveals();
+                  refreshUserInfo();
                 }}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 mb-5">
           <button className="border border-[#fff]/10 rounded-[8px] p-[10px]">
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
               Cards{" "}
@@ -566,6 +598,105 @@ export default function Home() {
                   <>Buy Card{numBuyCards > 1 ? "s" : ""}</>
                 )}
               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {userInfoModal && (
+          <motion.div
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+              duration: 0.3,
+            }}
+          >
+            <div className="relative space-y-6">
+              <div className="flex justify-between items-center">
+                <p className="text-[18px] leading-[90%] text-white font-semibold">
+                  User Info
+                </p>
+                <button
+                  className="absolute top-[-16px] right-[-16px] p-2 rounded-full bg-white/[0.09] cursor-pointer"
+                  onClick={() => setUserInfoModal(false)}
+                >
+                  <Image
+                    src={"/assets/cross-icon.svg"}
+                    alt="cross-icon"
+                    width={18}
+                    height={18}
+                    unoptimized
+                    priority
+                  />
+                </button>
+              </div>
+              <hr className="border-[0.5px] border-white/10" />
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
+                >
+                  Won
+                </p>
+                <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
+                  {state?.user?.amount_won ? (
+                    `$${state?.user?.amount_won}`
+                  ) : (
+                    <>&mdash;</>
+                  )}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
+                >
+                  Total Cards
+                </p>
+                <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
+                  {state?.user?.cards_count || <>&mdash;</>}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
+                >
+                  Total Reveals
+                </p>
+                <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
+                  {state?.user?.total_reveals || <>&mdash;</>}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
+                >
+                  Total Wins
+                </p>
+                <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
+                  {state?.user?.total_wins || <>&mdash;</>}
+                </p>
+              </div>
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
+                >
+                  Win Rate
+                </p>
+                <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
+                  {state?.user?.total_reveals && state?.user?.total_wins ? (
+                    `${(
+                      Number(state.user.total_wins / state.user.total_reveals) *
+                      100
+                    ).toFixed(2)}%`
+                  ) : (
+                    <>&mdash;</>
+                  )}
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
