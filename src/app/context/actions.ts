@@ -3,3 +3,4 @@ export const SET_APP_COLOR = 'SET_APP_COLOR';
 export const SET_HAS_PROVIDER = 'SET_HAS_PROVIDER';
 export const SET_PUBLIC_KEY = 'SET_PUBLIC_KEY';
 export const SET_USER = 'SET_USER';
+export const SET_IS_IN_MINIAPP = 'SET_IS_IN_MINIAPP';

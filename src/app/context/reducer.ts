@@ -1,5 +1,5 @@
 import { Action } from "./action";
-import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_HAS_PROVIDER, SET_PUBLIC_KEY, SET_USER } from "./actions";
+import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_PUBLIC_KEY, SET_USER } from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -28,6 +28,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         user: action.payload
+      }
+    case SET_IS_IN_MINIAPP:
+      return {
+        ...state,
+        isInMiniApp: action.payload
       }
     default:
       return state;

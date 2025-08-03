@@ -3,7 +3,7 @@ import { supabaseAdmin } from "~/lib/supabaseAdmin";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userWallet } = await request.json();
+    const { userWallet, fid, username } = await request.json();
     
     if (!userWallet) {
       return NextResponse.json(
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     // Check if user exists
     const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .select('wallet')
+      .select('wallet, fid, username')
       .eq('wallet', userWallet)
       .single();
     
@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
         .from('users')
         .insert({
           wallet: userWallet,
+          fid,
+          username,
           created_at: new Date().toISOString(),
           amount_won: 0,
           cards_count: 0,
@@ -48,10 +50,22 @@ export async function POST(request: NextRequest) {
         isNewUser: true 
       });
     } else {
-      // Update last_active for existing user
+      // Update last_active for existing user, and add fid/username if missing
+      const updateData: any = { last_active: new Date().toISOString() };
+      
+      // Add fid if provided and user doesn't have it
+      if (fid && !existingUser.fid) {
+        updateData.fid = fid;
+      }
+      
+      // Add username if provided and user doesn't have it
+      if (username && !existingUser.username) {
+        updateData.username = username;
+      }
+      
       const { data: updatedUser } = await supabaseAdmin
         .from('users')
-        .update({ last_active: new Date().toISOString() })
+        .update(updateData)
         .eq('wallet', userWallet)
         .select()
         .single();

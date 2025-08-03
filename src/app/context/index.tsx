@@ -4,7 +4,7 @@ import { Action } from "./action";
 import reducer from "./reducer";
 import initialState, { AppState } from "./state";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { SET_HAS_PROVIDER, SET_PUBLIC_KEY, SET_USER } from "./actions";
+import { SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_PUBLIC_KEY, SET_USER } from "./actions";
 
 interface ContextProps {
   children: React.ReactNode;
@@ -29,24 +29,31 @@ export const AppContextProvider: FC<ContextProps> = ({ children }) => {
     });
 
     const userWallet = pk?.publicKey;
+    const user = (await sdk.context)?.user
+    const isInMiniApp = await sdk.isInMiniApp();
 
     dispatch({
       type: SET_PUBLIC_KEY,
       payload: userWallet,
     });
 
+    dispatch({
+      type: SET_IS_IN_MINIAPP,
+      payload: isInMiniApp
+    })
+
     // Check if wallet exists and create user if needed
-    if (userWallet) {
-      await checkAndCreateUser(userWallet);
+    if (userWallet && user.fid) {
+      await checkAndCreateUser(userWallet, user.fid, user.username || "");
     }
   };
 
-  const checkAndCreateUser = async (userWallet: string) => {
+  const checkAndCreateUser = async (userWallet: string, fid: number, username: string) => {
     try {
       const response = await fetch("/api/users/check-or-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userWallet }),
+        body: JSON.stringify({ userWallet, fid, username }),
       });
 
       if (response.ok) {

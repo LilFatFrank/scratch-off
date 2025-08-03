@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CardGrid from "~/components/card-grid";
 import ScratchOff from "~/components/scratch-off";
@@ -36,7 +36,6 @@ export default function Home() {
   const [state, dispatch] = useContext(AppContext);
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -47,6 +46,7 @@ export default function Home() {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [userInfoModal, setUserInfoModal] = useState(false);
   const [loadingReveals, setLoadingReveals] = useState(false);
+  const readyCalled = useRef(false);
 
   // Fetch user info when wallet connects
   const fetchUserInfo = async (userWallet: string) => {
@@ -256,6 +256,37 @@ export default function Home() {
   useEffect(() => {
     fetchUserReveals(state.publicKey);
   }, [state.publicKey]);
+
+  // Call ready when app is fully loaded
+  useEffect(() => {
+    const callReady = async () => {
+      if (state.publicKey && !loading && cards.length >= 0 && !readyCalled.current) {
+        try {
+          await sdk.actions.ready();
+          readyCalled.current = true;
+        } catch (error) {
+          console.error("Failed to signal app ready:", error);
+        }
+      }
+    };
+
+    callReady();
+  }, [state.publicKey, loading, cards.length]);
+
+  // Test addMiniApp at the very beginning
+  useEffect(() => {
+    const testAddMiniApp = async () => {
+      try {
+        console.log("🔍 Testing addMiniApp at app startup...");
+        await sdk.actions.addMiniApp();
+        console.log("✅ addMiniApp succeeded at startup!");
+      } catch (error) {
+        console.log("❌ addMiniApp failed at startup:", error);
+      }
+    };
+
+    testAddMiniApp();
+  }, []);
 
   const handleCardSelect = (card: Card) => {
     setSelectedCard(card);

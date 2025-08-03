@@ -6,6 +6,7 @@ export interface AppState {
   hasProvider: boolean;
   publicKey: string;
   user: User | null;
+  isInMiniApp: boolean;
 }
 
 const initialState: AppState = {
@@ -14,6 +15,7 @@ const initialState: AppState = {
   hasProvider: false,
   publicKey: "",
   user: null,
+  isInMiniApp: false,
 };
 
 export default initialState;

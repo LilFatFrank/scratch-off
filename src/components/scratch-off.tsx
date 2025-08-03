@@ -3,8 +3,13 @@ import { useRef, useEffect, useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { AppContext } from "~/app/context";
 import { SET_APP_BACKGROUND, SET_APP_COLOR } from "~/app/context/actions";
-import { APP_COLORS, CANVAS_HEIGHT, CANVAS_WIDTH, SCRATCH_RADIUS } from "~/lib/constants";
-
+import {
+  APP_COLORS,
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  SCRATCH_RADIUS,
+} from "~/lib/constants";
+// import sdk from "@farcaster/miniapp-sdk";
 
 interface Card {
   id: string;
@@ -136,7 +141,7 @@ export default function ScratchOff({
       }
       const percent = (transparent / (CANVAS_WIDTH * CANVAS_HEIGHT)) * 100;
 
-      if (percent > 5 && !scratched && !isProcessing) {
+      if (percent > 40 && !scratched && !isProcessing) {
         setIsProcessing(true);
 
         // Call reveal API to get prize amount
@@ -185,7 +190,6 @@ export default function ScratchOff({
                   .then((response) => response.json())
                   .then((processData) => {
                     if (processData.success) {
-
                       onPrizeRevealed?.(data.prizeAmount);
                     }
                   })
@@ -334,7 +338,7 @@ export default function ScratchOff({
                 }}
               />
               {/* Scratch cover */}
-              {(!cardData?.scratched && !scratched) && (
+              {(!cardData || (!cardData?.scratched && !scratched)) && (
                 <canvas
                   ref={canvasRef}
                   width={CANVAS_WIDTH}
@@ -356,7 +360,7 @@ export default function ScratchOff({
           </motion.div>
         </div>
       </div>
-      {showBlurOverlay && (
+      {true && (
         <div
           className="fixed inset-0 z-50 backdrop-blur-md text-white flex flex-col items-center justify-center"
           style={{ pointerEvents: "auto" }}
@@ -373,6 +377,16 @@ export default function ScratchOff({
               ${prizeAmount}!
             </span>
           </p>
+          {/* <div className="flex items-center justify-center gap-3 absolute w-[90%] bottom-[24px]">
+            <button className="grow flex-1 py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px]">
+              Share
+            </button>
+            <div className="grow flex-1 border border-white rounded-[40px] p-[2px]" onClick={onAddToFarcaster}>
+              <button className="py-2 w-full bg-white font-semibold rounded-[40px] text-[14px]" style={{ color: state.appColor }}>
+                Add to Farcaster
+              </button>
+            </div>
+          </div> */}
         </div>
       )}
     </>
