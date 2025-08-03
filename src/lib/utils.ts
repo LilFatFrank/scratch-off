@@ -88,9 +88,11 @@ export async function getFarcasterMetadata(): Promise<MiniAppManifest> {
 
   return {
     accountAssociation: {
-      header: "",
-      payload: "",
-      signature: "",
+      header:
+        "eyJmaWQiOjY0MTEsInR5cGUiOiJhdXRoIiwia2V5IjoiMHhENTVDNDI0Zjg1OEVkOWViYjE4MDZjMDUyNDkwZDdmYTA0QzQ5QUQzIn0",
+      payload: "eyJkb21haW4iOiJzY3JhdGNoLW9mZi14aS52ZXJjZWwuYXBwIn0",
+      signature:
+        "FKReElMGys3dHMQ2FaGI2pF9ml88qTXwAjC1MsQ3XeotXu/JzKfa5APEWKYK19SQ+9SIeKtviVUV1YK8iSrHORs=",
     },
     frame: {
       version: "1",
