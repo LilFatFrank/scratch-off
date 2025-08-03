@@ -57,7 +57,7 @@ export const APP_OG_IMAGE_URL = `${APP_URL}/assets/splash-image.png`;
  * URL for the app's splash screen image.
  * Displayed during app loading.
  */
-export const APP_SPLASH_URL = `${APP_URL}/assets/splash-image.png`;
+export const APP_SPLASH_URL = `${APP_URL}/assets/scratch-card-image.png`;
 
 /**
  * Background color for the splash screen.
