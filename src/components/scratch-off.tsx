@@ -259,7 +259,7 @@ export default function ScratchOff({
 
   return (
     <>
-      <div className="h-full flex flex-col items-center justify-center">
+      <div className="h-full w-full flex flex-col items-center justify-center">
         <p
           className="font-[ABCGaisyr] text-center text-[30px] mb-5 font-bold italic rotate-[-4deg]"
           style={{
@@ -373,10 +373,10 @@ export default function ScratchOff({
             className="object-cover"
             unoptimized
           />
-          <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[90%] italic rotate-[-6deg]">
+          <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[92%] italic rotate-[-6deg]">
             You&apos;ve won
             <br />
-            <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[90%] italic">
+            <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[92%] italic">
               ${prizeAmount}!
             </span>
           </p>

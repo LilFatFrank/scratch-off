@@ -10,7 +10,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       className="h-[100dvh] transition-all ease-in-out duration-300"
       style={{ background: state.appBackground }}
     >
-      <div className="h-full max-w-[400px] flex flex-col items-center p-4 mx-auto">
+      <div className="h-full max-w-[400px] flex flex-col items-center mx-auto">
         {children}
       </div>
     </div>

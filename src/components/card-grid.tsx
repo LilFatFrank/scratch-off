@@ -22,7 +22,7 @@ interface CardGridProps {
 
 export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full w-full overflow-auto px-4">
       <div className="grid grid-cols-4 gap-4 mx-auto">
         {cards.map((card, index) => (
           <motion.div

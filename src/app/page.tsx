@@ -349,7 +349,7 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col w-full">
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full px-4 pt-4">
         {!selectedCard ? (
           <button
             className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
@@ -438,7 +438,7 @@ export default function Home() {
           )}
         </AnimatePresence>
 
-        <div className="flex items-center justify-center gap-3 mb-5">
+        <div className="flex items-center justify-center gap-3 mb-5 pb-4">
           <button className="border border-[#fff]/10 rounded-[8px] p-[10px]">
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
               Cards{" "}
@@ -466,7 +466,7 @@ export default function Home() {
       <AnimatePresence>
         {showHistory && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -536,7 +536,7 @@ export default function Home() {
       <AnimatePresence>
         {showInfo && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -584,7 +584,7 @@ export default function Home() {
       <AnimatePresence>
         {showBuyModal && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -681,7 +681,7 @@ export default function Home() {
       <AnimatePresence>
         {userInfoModal && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
