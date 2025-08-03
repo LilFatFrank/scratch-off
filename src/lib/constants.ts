@@ -32,7 +32,7 @@ export const APP_DESCRIPTION = 'Scratch to win big!';
  * The primary category for the mini app.
  * Used for app store categorization and discovery.
  */
-export const APP_PRIMARY_CATEGORY = 'defi';
+export const APP_PRIMARY_CATEGORY = 'finance';
 
 /**
  * Tags associated with the mini app.
