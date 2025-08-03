@@ -32,13 +32,13 @@ export const APP_DESCRIPTION = 'Scratch to win big!';
  * The primary category for the mini app.
  * Used for app store categorization and discovery.
  */
-export const APP_PRIMARY_CATEGORY = 'finance';
+export const APP_PRIMARY_CATEGORY = 'defi';
 
 /**
  * Tags associated with the mini app.
  * Used for search and discovery in app stores.
  */
-export const APP_TAGS = ['neynar', 'starter-kit', 'demo'];
+export const APP_TAGS = ['defi', 'social'];
 
 // --- Asset URLs ---
 /**
