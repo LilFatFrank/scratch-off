@@ -51,7 +51,7 @@ export const APP_ICON_URL = `${APP_URL}/assets/scratch-card-image.png`;
  * URL for the app's Open Graph image.
  * Used for social media sharing and previews.
  */
-export const APP_OG_IMAGE_URL = `${APP_URL}/assets/splash-image.png`;
+export const APP_OG_IMAGE_URL = `${APP_URL}/assets/scratch-card-image.png`;
 
 /**
  * URL for the app's splash screen image.
