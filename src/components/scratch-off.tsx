@@ -360,7 +360,7 @@ export default function ScratchOff({
           </motion.div>
         </div>
       </div>
-      {true && (
+      {showBlurOverlay && (
         <div
           className="fixed inset-0 z-50 backdrop-blur-md text-white flex flex-col items-center justify-center"
           style={{ pointerEvents: "auto" }}
