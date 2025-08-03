@@ -296,13 +296,64 @@ export default function Home() {
     setSelectedCard(null);
   };
 
+  // Close all other modals when opening a new one
+  const openModal = (modalType: 'history' | 'info' | 'buy' | 'userInfo') => {
+    // Close all modals first
+    setShowHistory(false);
+    setShowInfo(false);
+    setShowBuyModal(false);
+    setUserInfoModal(false);
+    
+    // Then open the requested modal
+    switch (modalType) {
+      case 'history':
+        setShowHistory(true);
+        break;
+      case 'info':
+        setShowInfo(true);
+        break;
+      case 'buy':
+        setShowBuyModal(true);
+        break;
+      case 'userInfo':
+        setUserInfoModal(true);
+        break;
+    }
+  };
+
+  // Helper function to format date properly
+  const formatDate = (dateString: string) => {
+    try {
+      // Parse the UTC timestamp and convert to local timezone
+      const date = new Date(dateString + 'Z'); // Add 'Z' to indicate UTC
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+      
+      // Format in user's local timezone
+      return date.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid date";
+    }
+  };
+
   return (
     <div className="h-full flex flex-col w-full">
       <div className="flex items-center justify-between w-full">
         {!selectedCard ? (
           <button
             className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-            onClick={() => setShowHistory(!showHistory)}
+            onClick={() => openModal('history')}
           >
             <Image
               src={"/assets/history-icon.svg"}
@@ -335,7 +386,7 @@ export default function Home() {
         )}
         <button
           className="px-6 border border-white/10 rounded-[48px] h-[42px] flex items-center justify-center gap-2"
-          onClick={() => setUserInfoModal(true)}
+          onClick={() => openModal('userInfo')}
         >
           <span className="text-[16px] leading-[90%] font-medium text-white/40">
             Won
@@ -346,7 +397,7 @@ export default function Home() {
         </button>
         <button
           className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-          onClick={() => setShowInfo(!showInfo)}
+          onClick={() => openModal('info')}
         >
           <Image
             src={"/assets/info-icon.svg"}
@@ -403,7 +454,7 @@ export default function Home() {
           </button>
           <button
             className="border border-[#fff] rounded-[8px] p-[10px]"
-            onClick={() => setShowBuyModal(true)}
+            onClick={() => openModal('buy')}
           >
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
               Buy
@@ -473,14 +524,7 @@ export default function Home() {
                         : `Won $${ur.prize_amount}!`}
                     </p>
                     <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
-                      {new Date(ur.created_at).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      })}
+                      {formatDate(ur.created_at)}
                     </p>
                   </div>
                 ))

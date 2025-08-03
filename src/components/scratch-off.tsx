@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useEffect, useState, useContext } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { SET_APP_BACKGROUND, SET_APP_COLOR } from "~/app/context/actions";
 import {
@@ -365,10 +366,12 @@ export default function ScratchOff({
           className="fixed inset-0 z-50 backdrop-blur-md text-white flex flex-col items-center justify-center"
           style={{ pointerEvents: "auto" }}
         >
-          <img
+          <Image
             src={"/assets/winner.gif"}
             alt="winner"
-            className="fixed w-full h-dvh top-0 bottom-0 left-0 right-0 object-cover"
+            fill
+            className="object-cover"
+            unoptimized
           />
           <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[90%] italic rotate-[-6deg]">
             You&apos;ve won
