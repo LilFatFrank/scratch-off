@@ -45,7 +45,6 @@ export default function Home() {
   const [buyingCards, setBuyingCards] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [userInfoModal, setUserInfoModal] = useState(false);
-  const [loadingReveals, setLoadingReveals] = useState(false);
   const readyCalled = useRef(false);
 
   // Fetch user info when wallet connects
@@ -56,10 +55,12 @@ export default function Home() {
       const response = await fetch(`/api/users/get?userWallet=${userWallet}`);
       const data = await response.json();
       if (data.success && data.user) {
-        dispatch({ type: SET_USER, payload: data.user });
+        return data.user;
       }
+      return {};
     } catch (error) {
       console.error("Failed to fetch user info:", error);
+      throw error;
     }
   };
 
@@ -67,19 +68,18 @@ export default function Home() {
   const fetchUserReveals = async (userWallet: string) => {
     if (!userWallet) return;
 
-    setLoadingReveals(true);
     try {
       const response = await fetch(
         `/api/users/reveals?userWallet=${userWallet}`
       );
       const data = await response.json();
       if (data.success) {
-        setUserReveals(data.reveals);
+        return data.reveals;
       }
+      return [];
     } catch (error) {
       console.error("Failed to fetch user reveals:", error);
-    } finally {
-      setLoadingReveals(false);
+      throw error;
     }
   };
 
@@ -87,45 +87,103 @@ export default function Home() {
   const fetchUserCards = async (userWallet: string) => {
     if (!userWallet) return;
 
-    setLoading(true);
     try {
       const response = await fetch(`/api/cards/user?userWallet=${userWallet}`);
       const data = await response.json();
       if (data.success) {
-        setCards(data.cards);
+        return data.cards;
       } else {
         console.error("Failed to fetch user cards:", data.error);
-        setCards([]);
+        return [];
       }
     } catch (error) {
       console.error("Failed to fetch user cards:", error);
-      setCards([]);
+      throw error;
+    }
+  };
+
+  // Fetch all data when wallet connects using Promise.allSettled
+  const fetchAllData = async (userWallet: string) => {
+    if (!userWallet) return;
+
+    setLoading(true);
+
+    try {
+      const promises = [
+        fetchUserCards(userWallet),
+        fetchUserInfo(userWallet),
+        fetchUserReveals(userWallet),
+      ];
+
+      const [userCards, userInfo, userReveals] = await Promise.allSettled(
+        promises
+      );
+
+      if (userCards.status === "fulfilled") setCards(userCards.value);
+      if (userInfo.status === "fulfilled")
+        dispatch({ type: SET_USER, payload: userInfo.value });
+      if (userReveals.status === "fulfilled") setUserReveals(userReveals.value);
+    } catch (error) {
+      console.error("Error in fetching user info", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch cards when wallet connects
+  // Call ready when app is fully loaded
+  useEffect(() => {
+    const callReady = async () => {
+      if (state.publicKey) {
+        try {
+          await sdk.actions.ready();
+          readyCalled.current = true;
+        } catch (error) {
+          console.error("Failed to signal app ready:", error);
+        }
+      }
+    };
+
+    callReady();
+  }, [state.publicKey]);
+
+  // Fetch all data when wallet connects
   useEffect(() => {
     if (state.publicKey) {
-      fetchUserCards(state.publicKey);
-      fetchUserInfo(state.publicKey);
+      fetchAllData(state.publicKey);
     }
   }, [state.publicKey]);
 
   // Function to refresh cards (can be called after buying new cards)
-  const refreshCards = () => {
-    fetchUserCards(state.publicKey);
+  const refreshCards = async () => {
+    try {
+      const cards = await fetchUserCards(state.publicKey);
+      setCards(cards);
+    } catch (e) {
+      console.log("error refreshing cards", e);
+    }
   };
 
   // Function to refresh reveals (can be called after processing a prize)
-  const refreshReveals = () => {
-    fetchUserReveals(state.publicKey);
+  const refreshReveals = async () => {
+    try {
+      const reveals = await fetchUserReveals(state.publicKey);
+      setUserReveals(reveals);
+    } catch (e) {
+      console.log("error refreshing reveals", e);
+    }
   };
 
   // Function to refresh user info (can be called after processing a prize)
-  const refreshUserInfo = () => {
-    fetchUserInfo(state.publicKey);
+  const refreshUserInfo = async () => {
+    try {
+      const userInfo = await fetchUserInfo(state.publicKey);
+      dispatch({
+        type: SET_USER,
+        payload: userInfo,
+      });
+    } catch (e) {
+      console.log("error refreshing user info", e);
+    }
   };
 
   // Buy cards function
@@ -254,27 +312,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchUserReveals(state.publicKey);
-  }, [state.publicKey]);
-
-  // Call ready when app is fully loaded
-  useEffect(() => {
-    const callReady = async () => {
-      if (state.publicKey && !loading && cards.length >= 0 && !readyCalled.current) {
-        try {
-          await sdk.actions.ready();
-          readyCalled.current = true;
-        } catch (error) {
-          console.error("Failed to signal app ready:", error);
-        }
-      }
-    };
-
-    callReady();
-  }, [state.publicKey, loading, cards.length]);
-
-  // Test addMiniApp at the very beginning
-  useEffect(() => {
     const testAddMiniApp = async () => {
       try {
         console.log("🔍 Testing addMiniApp at app startup...");
@@ -297,25 +334,25 @@ export default function Home() {
   };
 
   // Close all other modals when opening a new one
-  const openModal = (modalType: 'history' | 'info' | 'buy' | 'userInfo') => {
+  const openModal = (modalType: "history" | "info" | "buy" | "userInfo") => {
     // Close all modals first
     setShowHistory(false);
     setShowInfo(false);
     setShowBuyModal(false);
     setUserInfoModal(false);
-    
+
     // Then open the requested modal
     switch (modalType) {
-      case 'history':
+      case "history":
         setShowHistory(true);
         break;
-      case 'info':
+      case "info":
         setShowInfo(true);
         break;
-      case 'buy':
+      case "buy":
         setShowBuyModal(true);
         break;
-      case 'userInfo':
+      case "userInfo":
         setUserInfoModal(true);
         break;
     }
@@ -325,13 +362,13 @@ export default function Home() {
   const formatDate = (dateString: string) => {
     try {
       // Parse the UTC timestamp and convert to local timezone
-      const date = new Date(dateString + 'Z'); // Add 'Z' to indicate UTC
-      
+      const date = new Date(dateString + "Z"); // Add 'Z' to indicate UTC
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return "Invalid date";
       }
-      
+
       // Format in user's local timezone
       return date.toLocaleDateString("en-US", {
         day: "numeric",
@@ -349,11 +386,34 @@ export default function Home() {
 
   return (
     <div className="h-full flex flex-col w-full">
-      <div className="flex items-center justify-between w-full px-4 pt-4">
+      {/* Top Section - Header */}
+      <motion.div 
+        className="flex items-center justify-between w-full px-4 pt-4 pb-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ 
+          opacity: loading ? 0 : 1, 
+          y: loading ? -20 : 0 
+        }}
+        transition={{ 
+          duration: 0.6, 
+          ease: "easeOut",
+          delay: 0.2
+        }}
+      >
         {!selectedCard ? (
-          <button
+          <motion.button
             className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-            onClick={() => openModal('history')}
+            onClick={() => openModal("history")}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: loading ? 0 : 1, 
+              scale: loading ? 0.8 : 1 
+            }}
+            transition={{ 
+              duration: 0.4, 
+              ease: "easeOut",
+              delay: 0.3
+            }}
           >
             <Image
               src={"/assets/history-icon.svg"}
@@ -363,11 +423,21 @@ export default function Home() {
               width={24}
               height={24}
             />
-          </button>
+          </motion.button>
         ) : (
-          <button
+          <motion.button
             className="p-2 relative z-[52] rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
             onClick={handleCloseModal}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: loading ? 0 : 1, 
+              scale: loading ? 0.8 : 1 
+            }}
+            transition={{ 
+              duration: 0.4, 
+              ease: "easeOut",
+              delay: 0.3
+            }}
           >
             <svg
               className="w-6 h-6"
@@ -382,11 +452,21 @@ export default function Home() {
                 d="M15 19l-7-7 7-7"
               />
             </svg>
-          </button>
+          </motion.button>
         )}
-        <button
+        <motion.button
           className="px-6 border border-white/10 rounded-[48px] h-[42px] flex items-center justify-center gap-2"
-          onClick={() => openModal('userInfo')}
+          onClick={() => openModal("userInfo")}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ 
+            opacity: loading ? 0 : 1, 
+            scale: loading ? 0.8 : 1 
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: "easeOut",
+            delay: 0.4
+          }}
         >
           <span className="text-[16px] leading-[90%] font-medium text-white/40">
             Won
@@ -394,10 +474,20 @@ export default function Home() {
           <span className="text-[16px] leading-[90%] font-medium text-white">
             ${state?.user?.amount_won || 0}
           </span>
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-          onClick={() => openModal('info')}
+          onClick={() => openModal("info")}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ 
+            opacity: loading ? 0 : 1, 
+            scale: loading ? 0.8 : 1 
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: "easeOut",
+            delay: 0.5
+          }}
         >
           <Image
             src={"/assets/info-icon.svg"}
@@ -407,23 +497,28 @@ export default function Home() {
             width={24}
             height={24}
           />
-        </button>
-      </div>
-      <div className="flex-1 flex flex-col h-full">
+        </motion.button>
+      </motion.div>
+      {/* Middle Section - Cards/Scratch (Scrollable) */}
+      <div className="flex-1 h-[80%]">
         <AnimatePresence mode="wait">
           {!selectedCard && cards.length ? (
             <motion.div
               key="grid"
               transition={{ duration: 0.3 }}
-              className="flex-1 flex items-center justify-center py-5"
+              className="h-full overflow-hidden"
             >
-              <CardGrid cards={cards} onCardSelect={handleCardSelect} />
+              <div className="h-full overflow-y-auto px-4">
+                <div className="pt-4 pb-7">
+                  <CardGrid cards={cards} onCardSelect={handleCardSelect} />
+                </div>
+              </div>
             </motion.div>
           ) : (
             <motion.div
               key="detail"
               transition={{ duration: 0.3 }}
-              className="flex-1 flex items-center justify-center py-5"
+              className="h-full flex items-center justify-center px-4"
             >
               <ScratchOff
                 cardData={selectedCard}
@@ -437,36 +532,71 @@ export default function Home() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        <div className="flex items-center justify-center gap-3 mb-5 pb-4">
-          <button className="border border-[#fff]/10 rounded-[8px] p-[10px]">
-            <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
-              Cards{" "}
-              {selectedCard ? (
-                <>
-                  {selectedCard.card_no}
-                  <span className="text-[#fff]/40">/{cards.length}</span>
-                </>
-              ) : (
-                cards.length
-              )}
-            </p>
-          </button>
-          <button
-            className="border border-[#fff] rounded-[8px] p-[10px]"
-            onClick={() => openModal('buy')}
-          >
-            <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
-              Buy
-            </p>
-          </button>
-        </div>
       </div>
+
+      {/* Bottom Section - Controls */}
+      <motion.div 
+        className="flex items-center justify-center gap-3 p-4 flex-shrink-0"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ 
+          opacity: loading ? 0 : 1, 
+          y: loading ? 20 : 0 
+        }}
+        transition={{ 
+          duration: 0.6, 
+          ease: "easeOut",
+          delay: 0.4
+        }}
+      >
+        <motion.button 
+          className="border border-[#fff]/10 rounded-[8px] p-[10px]"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ 
+            opacity: loading ? 0 : 1, 
+            scale: loading ? 0.8 : 1 
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: "easeOut",
+            delay: 0.6
+          }}
+        >
+          <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
+            Cards{" "}
+            {selectedCard ? (
+              <>
+                {selectedCard.card_no}
+                <span className="text-[#fff]/40">/{cards.length}</span>
+              </>
+            ) : (
+              cards.length
+            )}
+          </p>
+        </motion.button>
+        <motion.button
+          className="border border-[#fff] rounded-[8px] p-[10px]"
+          onClick={() => openModal("buy")}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ 
+            opacity: loading ? 0 : 1, 
+            scale: loading ? 0.8 : 1 
+          }}
+          transition={{ 
+            duration: 0.4, 
+            ease: "easeOut",
+            delay: 0.7
+          }}
+        >
+          <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
+            Buy
+          </p>
+        </motion.button>
+      </motion.div>
 
       <AnimatePresence>
         {showHistory && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -497,38 +627,29 @@ export default function Home() {
                 </button>
               </div>
               <hr className="border-[0.5px] border-white/10" />
-              {loadingReveals ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div className="h-4 bg-[#fff]/20 rounded w-[100px] animate-pulse" />
-                    <div className="h-4 bg-[#fff]/20 rounded w-[150px] animate-pulse" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-4 bg-[#fff]/20 rounded w-[100px] animate-pulse" />
-                    <div className="h-4 bg-[#fff]/20 rounded w-[150px] animate-pulse" />
-                  </div>
-                </>
-              ) : userReveals.length ? (
-                userReveals.map((ur) => (
-                  <div
-                    key={ur.id}
-                    className="flex justify-between items-center"
-                  >
-                    <p
-                      className={`text-[14px] font-medium leading-[90%] ${
-                        ur.prize_amount === 0 ? "text-[#fff]/60" : "text-[#fff]"
-                      }`}
+              {userReveals.length
+                ? userReveals.map((ur) => (
+                    <div
+                      key={ur.id}
+                      className="flex justify-between items-center"
                     >
-                      {ur.prize_amount === 0
-                        ? "No win! :("
-                        : `Won $${ur.prize_amount}!`}
-                    </p>
-                    <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
-                      {formatDate(ur.created_at)}
-                    </p>
-                  </div>
-                ))
-              ) : null}
+                      <p
+                        className={`text-[14px] font-medium leading-[90%] ${
+                          ur.prize_amount === 0
+                            ? "text-[#fff]/60"
+                            : "text-[#fff]"
+                        }`}
+                      >
+                        {ur.prize_amount === 0
+                          ? "No win! :("
+                          : `Won $${ur.prize_amount}!`}
+                      </p>
+                      <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
+                        {formatDate(ur.created_at)}
+                      </p>
+                    </div>
+                  ))
+                : null}
             </div>
           </motion.div>
         )}
@@ -536,7 +657,7 @@ export default function Home() {
       <AnimatePresence>
         {showInfo && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -584,7 +705,7 @@ export default function Home() {
       <AnimatePresence>
         {showBuyModal && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -681,7 +802,7 @@ export default function Home() {
       <AnimatePresence>
         {userInfoModal && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-4 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
