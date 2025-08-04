@@ -58,30 +58,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const notificationResult = await axios.post(
-      "https://api.neynar.com/v2/farcaster/notification",
-      {
-        notification: {
-          target_url: "https://scratch-off-xi.vercel.app",
-          body: "Scratch to win big!",
-          title: "Welcome to Scratch Off!",
+    try {
+      const notificationResult = await axios.post(
+        "https://api.neynar.com/v2/farcaster/frame/notifications/",
+        {
+          notification: {
+            target_url: "https://scratch-off-xi.vercel.app",
+            body: "Scratch to win big!",
+            title: "Welcome to Scratch Off!",
+          },
+          target_fids: [fid],
         },
-        target_fids: [fid],
-      },
-      {
-        headers: {
-          accept: "application/json",
-          api_key: process.env.NEYNAR_API_KEY,
-          "content-type": "application/json",
-        },
-      }
-    );
+        {
+          headers: {
+            accept: "application/json",
+            api_key: process.env.NEYNAR_API_KEY,
+            "content-type": "application/json",
+          },
+        }
+      );
 
-    return NextResponse.json({
-      success: true,
-      user: updatedUser,
-      notification: notificationResult,
-    });
+      return NextResponse.json({
+        success: true,
+        user: updatedUser,
+        notification: notificationResult.data,
+      });
+    } catch (notificationError: any) {
+      console.error("Neynar notification failed:", notificationError.response?.data || notificationError.message);
+      return NextResponse.json(
+        { error: "Failed to send notification" },
+        { status: 500 }
+      );
+    }
 
   } catch (error) {
     console.error("Error in welcome notification:", error);
