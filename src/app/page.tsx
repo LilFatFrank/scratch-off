@@ -312,18 +312,31 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const testAddMiniApp = async () => {
-      try {
-        console.log("🔍 Testing addMiniApp at app startup...");
-        const result = await sdk.actions.addMiniApp();
-        console.log("✅ addMiniApp succeeded at startup!", result);
-      } catch (error) {
-        console.log("❌ addMiniApp failed at startup:", error);
-      }
-    };
+    if (state.publicKey && state.user) {
+      const testAddMiniApp = async () => {
+        try {
+          console.log("🔍 Testing addMiniApp at app startup...");
+          const result = await sdk.actions.addMiniApp();
+          if (result.notificationDetails && result.notificationDetails.token) {
+            try {
+              await fetch(`/api/neynar/welcome-notification`, {
+                body: JSON.stringify({
+                  fid: state.user?.fid,
+                  notification_token: result.notificationDetails.token,
+                }),
+              });
+            } catch (err) {
+              console.log("sending notification error", err);
+            }
+          }
+        } catch (error) {
+          console.log("❌ addMiniApp failed at startup:", error);
+        }
+      };
 
-    testAddMiniApp();
-  }, []);
+      testAddMiniApp();
+    }
+  }, [state.publicKey, state.user]);
 
   const handleCardSelect = (card: Card) => {
     setSelectedCard(card);
@@ -387,17 +400,17 @@ export default function Home() {
   return (
     <div className="h-full flex flex-col w-full">
       {/* Top Section - Header */}
-      <motion.div 
+      <motion.div
         className="flex items-center justify-between w-full px-4 pt-4 pb-2"
         initial={{ opacity: 0, y: -20 }}
-        animate={{ 
-          opacity: loading ? 0 : 1, 
-          y: loading ? -20 : 0 
+        animate={{
+          opacity: loading ? 0 : 1,
+          y: loading ? -20 : 0,
         }}
-        transition={{ 
-          duration: 0.6, 
+        transition={{
+          duration: 0.6,
           ease: "easeOut",
-          delay: 0.2
+          delay: 0.2,
         }}
       >
         {!selectedCard ? (
@@ -405,14 +418,14 @@ export default function Home() {
             className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
             onClick={() => openModal("history")}
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: loading ? 0 : 1, 
-              scale: loading ? 0.8 : 1 
+            animate={{
+              opacity: loading ? 0 : 1,
+              scale: loading ? 0.8 : 1,
             }}
-            transition={{ 
-              duration: 0.4, 
+            transition={{
+              duration: 0.4,
               ease: "easeOut",
-              delay: 0.3
+              delay: 0.3,
             }}
           >
             <Image
@@ -429,14 +442,14 @@ export default function Home() {
             className="p-2 relative z-[52] rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
             onClick={handleCloseModal}
             initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ 
-              opacity: loading ? 0 : 1, 
-              scale: loading ? 0.8 : 1 
+            animate={{
+              opacity: loading ? 0 : 1,
+              scale: loading ? 0.8 : 1,
             }}
-            transition={{ 
-              duration: 0.4, 
+            transition={{
+              duration: 0.4,
               ease: "easeOut",
-              delay: 0.3
+              delay: 0.3,
             }}
           >
             <svg
@@ -458,14 +471,14 @@ export default function Home() {
           className="px-6 border border-white/10 rounded-[48px] h-[42px] flex items-center justify-center gap-2"
           onClick={() => openModal("userInfo")}
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: loading ? 0 : 1, 
-            scale: loading ? 0.8 : 1 
+          animate={{
+            opacity: loading ? 0 : 1,
+            scale: loading ? 0.8 : 1,
           }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: "easeOut",
-            delay: 0.4
+            delay: 0.4,
           }}
         >
           <span className="text-[16px] leading-[90%] font-medium text-white/40">
@@ -479,14 +492,14 @@ export default function Home() {
           className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
           onClick={() => openModal("info")}
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: loading ? 0 : 1, 
-            scale: loading ? 0.8 : 1 
+          animate={{
+            opacity: loading ? 0 : 1,
+            scale: loading ? 0.8 : 1,
           }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: "easeOut",
-            delay: 0.5
+            delay: 0.5,
           }}
         >
           <Image
@@ -535,30 +548,30 @@ export default function Home() {
       </div>
 
       {/* Bottom Section - Controls */}
-      <motion.div 
+      <motion.div
         className="flex items-center justify-center gap-3 p-4 flex-shrink-0"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: loading ? 0 : 1, 
-          y: loading ? 20 : 0 
+        animate={{
+          opacity: loading ? 0 : 1,
+          y: loading ? 20 : 0,
         }}
-        transition={{ 
-          duration: 0.6, 
+        transition={{
+          duration: 0.6,
           ease: "easeOut",
-          delay: 0.4
+          delay: 0.4,
         }}
       >
-        <motion.button 
+        <motion.button
           className="border border-[#fff]/10 rounded-[8px] p-[10px]"
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: loading ? 0 : 1, 
-            scale: loading ? 0.8 : 1 
+          animate={{
+            opacity: loading ? 0 : 1,
+            scale: loading ? 0.8 : 1,
           }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: "easeOut",
-            delay: 0.6
+            delay: 0.6,
           }}
         >
           <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
@@ -577,14 +590,14 @@ export default function Home() {
           className="border border-[#fff] rounded-[8px] p-[10px]"
           onClick={() => openModal("buy")}
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: loading ? 0 : 1, 
-            scale: loading ? 0.8 : 1 
+          animate={{
+            opacity: loading ? 0 : 1,
+            scale: loading ? 0.8 : 1,
           }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: "easeOut",
-            delay: 0.7
+            delay: 0.7,
           }}
         >
           <p className="text-[14px] leading-[90%] font-medium text-[#fff]">

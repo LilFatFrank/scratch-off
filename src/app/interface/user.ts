@@ -8,4 +8,6 @@ export interface User {
     last_active: string,
     total_reveals: number,
     total_wins: number,
+    notification_enabled?: boolean,
+    notification_token?: string | null,
 }
