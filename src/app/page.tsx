@@ -315,8 +315,8 @@ export default function Home() {
     const testAddMiniApp = async () => {
       try {
         console.log("🔍 Testing addMiniApp at app startup...");
-        await sdk.actions.addMiniApp();
-        console.log("✅ addMiniApp succeeded at startup!");
+        const result = await sdk.actions.addMiniApp();
+        console.log("✅ addMiniApp succeeded at startup!", result);
       } catch (error) {
         console.log("❌ addMiniApp failed at startup:", error);
       }
