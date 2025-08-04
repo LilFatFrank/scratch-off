@@ -22,10 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (userError || !user) {
       console.error("Error finding user by FID:", userError);
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Update user with notification settings
@@ -83,14 +80,17 @@ export async function POST(request: NextRequest) {
         user: updatedUser,
         notification: notificationResult.data,
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (notificationError: any) {
-      console.error("Neynar notification failed:", notificationError.response?.data || notificationError.message);
+      console.error(
+        "Neynar notification failed:",
+        notificationError.response?.data || notificationError.message
+      );
       return NextResponse.json(
         { error: "Failed to send notification" },
         { status: 500 }
       );
     }
-
   } catch (error) {
     console.error("Error in welcome notification:", error);
     return NextResponse.json(
