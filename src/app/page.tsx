@@ -320,6 +320,8 @@ export default function Home() {
           if (result.notificationDetails && result.notificationDetails.token) {
             try {
               await fetch(`/api/neynar/welcome-notification`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   fid: state.user?.fid,
                   notification_token: result.notificationDetails.token,
