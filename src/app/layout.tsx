@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         action: {
           type: "launch_frame",
           name: "Scratch Off",
-          url: "https://scratch-off-xi.vercel.app",
+          url: "https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off",
           splashImageUrl:
             "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
         },

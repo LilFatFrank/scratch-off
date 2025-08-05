@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
         <head>
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}" />
-          <meta property="fc:frame:button:1" content="Scratch Off" />
-          <meta property="fc:frame:post_url" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
+          <meta property="fc:frame:button:1" content="Play Scratch Off" />
+          <meta property="fc:frame:button:1:action" content="launch_frame" />
+          <meta property="fc:frame:button:1:target" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
           <title>Won $${prizeAmount}!</title>
         </head>
         <body>
           <h1>${username} won $${prizeAmount}!</h1>
-          <p>Click the button to play Scratch Off!</p>
         </body>
       </html>
     `;

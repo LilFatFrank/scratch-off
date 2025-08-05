@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         [
           // Background scratch card (blurred)
           React.createElement("img", {
-            src: 'https://scratch-off-xi.vercel.app/assets/scratch-card-image.png',
+            src: 'https://scratch-off-xi.vercel.app/assets/scratched-card-image.png',
             alt: 'scratch card background',
             style: {
               position: "absolute",
