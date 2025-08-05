@@ -68,14 +68,14 @@ export default function ScratchOff({
     if (!state.user) return;
     
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://scratch-off-xi.vercel.app';
-    const imageUrl = `${baseUrl}/api/share-image?` + new URLSearchParams({
+    const frameUrl = `${baseUrl}/api/frame-share?` + new URLSearchParams({
       prize: prizeAmount.toString(),
       username: state.user.username || '',
     }).toString();
 
     try {
-      // Copy the image URL to clipboard
-      await navigator.clipboard.writeText(imageUrl);
+      // Copy the frame URL to clipboard
+      await navigator.clipboard.writeText(frameUrl);
       
       // Update button text temporarily
       setShareButtonText("Copied!");
@@ -93,7 +93,7 @@ export default function ScratchOff({
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
       // Fallback: open in new tab
-      window.open(imageUrl, '_blank');
+      window.open(frameUrl, '_blank');
     }
   };
 
