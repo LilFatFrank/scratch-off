@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { SET_APP_BACKGROUND, SET_APP_COLOR } from "~/app/context/actions";
-import { useNeynarUser } from "~/hooks/useNeynarUser";
 import {
   APP_COLORS,
   CANVAS_HEIGHT,
@@ -37,7 +36,6 @@ export default function ScratchOff({
   onPrizeRevealed,
 }: ScratchOffProps) {
   const [state, dispatch] = useContext(AppContext);
-  const { user } = useNeynarUser();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,6 +89,16 @@ export default function ScratchOff({
       timeoutRef.current = setTimeout(() => {
         setShareButtonText("Share Win");
       }, 2000);
+
+      await fetch('/api/neynar/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid: state.user.fid,
+          username: state.user.username,
+          amount: prizeAmount
+        })
+      });
       
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);

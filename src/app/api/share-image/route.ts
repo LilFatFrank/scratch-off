@@ -103,16 +103,14 @@ export async function GET(request: Request) {
                   lineHeight: "92%",
                   marginBottom: "10px",
                 },
-                children: `${username} won`,
-              }),
+              }, `${username} won`),
               React.createElement("div", {
                 style: {
                   fontSize: "94px",
                   lineHeight: "92%",
                   color: "#FFFFFF",
                 },
-                children: `$${prizeAmount}!`,
-              }),
+              }, `$${prizeAmount}!`),
             ]
           ),
         ]

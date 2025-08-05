@@ -204,6 +204,7 @@ export async function POST(request: NextRequest) {
 
       // Update reveal with payout transaction
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { data: updatedReveal, error: updateRevealError } = await supabaseAdmin
           .from('reveals')
           .update({
