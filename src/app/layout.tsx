@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   other: {
     "fc:frame": JSON.stringify({
       version: "next",
-      imageUrl: "https://scratch-off-xi.vercel.app/assets/splash-image.png",
+      imageUrl: "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
       button: {
         title: "Scratch Off",
         action: {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
           name: "Scratch Off",
           url: "https://scratch-off-xi.vercel.app",
           splashImageUrl:
-            "https://scratch-off-xi.vercel.app/assets/splash-image.png",
+            "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
         },
       },
     }),

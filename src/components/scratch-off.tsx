@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { SET_APP_BACKGROUND, SET_APP_COLOR } from "~/app/context/actions";
+import { useNeynarUser } from "~/hooks/useNeynarUser";
 import {
   APP_COLORS,
   CANVAS_HEIGHT,
@@ -35,14 +36,17 @@ export default function ScratchOff({
   cardData,
   onPrizeRevealed,
 }: ScratchOffProps) {
-  const [, dispatch] = useContext(AppContext);
+  const [state, dispatch] = useContext(AppContext);
+  const { user } = useNeynarUser();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [scratched, setScratched] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [prizeAmount, setPrizeAmount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
+  const [shareButtonText, setShareButtonText] = useState("Share Win");
 
   // Mouse handlers for card tilt
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -60,6 +64,39 @@ export default function ScratchOff({
 
   const handleMouseLeave = () => {
     setTilt({ x: 0, y: 0 });
+  };
+
+  const handleShare = async () => {
+    if (!state.user) return;
+    
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://scratch-off-xi.vercel.app';
+    const imageUrl = `${baseUrl}/api/share-image?` + new URLSearchParams({
+      prize: prizeAmount.toString(),
+      username: state.user.username || '',
+    }).toString();
+
+    try {
+      // Copy the image URL to clipboard
+      await navigator.clipboard.writeText(imageUrl);
+      
+      // Update button text temporarily
+      setShareButtonText("Copied!");
+      
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Reset button text after 2 seconds
+      timeoutRef.current = setTimeout(() => {
+        setShareButtonText("Share Win");
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+      // Fallback: open in new tab
+      window.open(imageUrl, '_blank');
+    }
   };
 
   // Draw the cover image on the canvas
@@ -114,7 +151,7 @@ export default function ScratchOff({
     };
 
     const pointerDown = (e: PointerEvent) => {
-      if (!cardData) return;
+      if (!cardData || isProcessing) return;
       isDrawing = true;
       const { x, y } = getPointer(e);
       scratch(x, y);
@@ -246,6 +283,13 @@ export default function ScratchOff({
       setIsProcessing(false);
       setShowBlurOrverlay(false);
       setTilt({ x: 0, y: 0 });
+      setShareButtonText("Share Win");
+      
+      // Clear timeout on unmount
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
       dispatch({
         type: SET_APP_COLOR,
         payload: APP_COLORS.DEFAULT,
@@ -380,16 +424,14 @@ export default function ScratchOff({
               ${prizeAmount}!
             </span>
           </p>
-          {/* <div className="flex items-center justify-center gap-3 absolute w-[90%] bottom-[24px]">
-            <button className="grow flex-1 py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px]">
-              Share
+          <div className="absolute w-[90%] bottom-[24px]">
+            <button 
+              onClick={handleShare}
+              className="w-full py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px] hover:bg-white/10 transition-colors"
+            >
+              {shareButtonText}
             </button>
-            <div className="grow flex-1 border border-white rounded-[40px] p-[2px]" onClick={onAddToFarcaster}>
-              <button className="py-2 w-full bg-white font-semibold rounded-[40px] text-[14px]" style={{ color: state.appColor }}>
-                Add to Farcaster
-              </button>
-            </div>
-          </div> */}
+          </div>
         </div>
       )}
     </>

@@ -317,7 +317,7 @@ export default function Home() {
         try {
           console.log("🔍 Testing addMiniApp at app startup...");
           const result = await sdk.actions.addMiniApp();
-          if (result.notificationDetails && result.notificationDetails.token) {
+          if (result.notificationDetails && result.notificationDetails.token && !state.user?.notification_enabled) {
             try {
               await fetch(`/api/neynar/welcome-notification`, {
                 method: "POST",

@@ -57,13 +57,13 @@ export const APP_OG_IMAGE_URL = `${APP_URL}/assets/og-hero-image.png`;
  * URL for the app's splash screen image.
  * Displayed during app loading.
  */
-export const APP_SPLASH_URL = `${APP_URL}/assets/splash-image.png`;
+export const APP_SPLASH_URL = `${APP_URL}/assets/splash-image.jpg`;
 
 /**
  * Background color for the splash screen.
  * Used as fallback when splash image is loading.
  */
-export const APP_SPLASH_BACKGROUND_COLOR = '#000';
+export const APP_SPLASH_BACKGROUND_COLOR = '#fff';
 
 // --- UI Configuration ---
 /**

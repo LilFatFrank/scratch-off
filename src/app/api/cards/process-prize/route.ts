@@ -60,8 +60,6 @@ export async function POST(request: NextRequest) {
     const newTotalWins = (user.total_wins || 0) + (prizeAmount > 0 ? 1 : 0);
     const newAmountWon = (user.amount_won || 0) + prizeAmount;
 
-    console.log({ newAmountWon });
-
     const { error: userUpdateError } = await supabaseAdmin
       .from('users')
       .update({
@@ -78,6 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Store reveal in Supabase
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { data: revealData, error: revealError } = await supabaseAdmin
         .from('reveals')
         .insert({
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
           won: prizeAmount > 0
         });
       } else {
-        console.log("Reveal stored successfully:", revealData);
+        console.log("Reveal stored successfully");
       }
     } catch (error) {
       console.error("Failed to store reveal:", error);
@@ -223,7 +222,7 @@ export async function POST(request: NextRequest) {
             payout_tx: tx
           });
         } else {
-          console.log("Reveal updated with payout successfully:", updatedReveal);
+          console.log("Reveal updated with payout successfully");
         }
       } catch (error) {
         console.error("Failed to update reveal with payout:", error);
