@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Find users in database with notification_enabled = true
     const bestFriendFids = bestFriends.map(friend => friend.fid);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let usersToNotify: any[] = [];
 
     if (bestFriendFids.length > 0) {
@@ -111,6 +112,7 @@ export async function POST(request: NextRequest) {
 
         notificationResult = notificationResponse.data;
         console.log(`Sent notifications to ${targetFids.length} users`);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (notificationError: any) {
         console.error(
           "Neynar notification failed:",
