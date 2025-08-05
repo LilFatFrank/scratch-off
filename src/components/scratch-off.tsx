@@ -89,16 +89,6 @@ export default function ScratchOff({
       timeoutRef.current = setTimeout(() => {
         setShareButtonText("Share Win");
       }, 2000);
-
-      await fetch('/api/neynar/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fid: state.user.fid,
-          username: state.user.username,
-          amount: prizeAmount
-        })
-      });
       
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
@@ -197,7 +187,7 @@ export default function ScratchOff({
           body: JSON.stringify({ cardId: cardData?.id }),
         })
           .then((response) => response.json())
-          .then((data) => {
+          .then(async (data) => {
             if (data.success) {
               setPrizeAmount(data.prizeAmount);
               setShowBlurOrverlay(data.prizeAmount > 0);
@@ -209,6 +199,15 @@ export default function ScratchOff({
                 dispatch({
                   type: SET_APP_BACKGROUND,
                   payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.WON})`,
+                });
+                await fetch('/api/neynar/send-notification', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    fid: state.user?.fid,
+                    username: state.user?.username,
+                    amount: data.prizeAmount
+                  })
                 });
               } else {
                 dispatch({
