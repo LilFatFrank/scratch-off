@@ -5,6 +5,7 @@ import { Providers } from "~/app/providers";
 import { AppContextProvider } from "./context";
 import Wrapper from "~/components/wrapper";
 import { Geist, Geist_Mono } from "next/font/google";
+import { getMiniAppEmbedMetadata } from "~/lib/utils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,21 +31,7 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "fc:frame": JSON.stringify({
-      version: "next",
-      imageUrl:
-        "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
-      button: {
-        title: "Scratch Off",
-        action: {
-          type: "launch_frame",
-          name: "Scratch Off",
-          url: "https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off",
-          splashImageUrl:
-            "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
-        },
-      },
-    }),
+    "fc:frame": JSON.stringify(getMiniAppEmbedMetadata()),
   },
 };
 
