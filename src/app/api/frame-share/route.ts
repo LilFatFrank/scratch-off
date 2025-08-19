@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { getMiniAppEmbedMetadata } from "~/lib/utils";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,19 +7,16 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get("username") || "";
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://scratch-off-xi.vercel.app';
 
-    // Get mini app metadata
-    const metadata = getMiniAppEmbedMetadata(`${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}`);
-
     // Create Frame HTML that uses your generated image
     const frameHtml = `
       <!DOCTYPE html>
       <html>
         <head>
-          <meta property="fc:miniapp" content="vNext" />
-          <meta property="fc:miniapp:image" content="${metadata.imageUrl}" />
-          <meta property="fc:miniapp:button:1" content="${metadata.button.title}" />
-          <meta property="fc:miniapp:button:1:action" content="post" />
-          <meta property="fc:miniapp:button:1:target" content="${metadata.button.action.url}" />
+          <meta property="fc:frame" content="vNext" />
+          <meta property="fc:frame:image" content="${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}" />
+          <meta property="fc:frame:button:1" content="Play Scratch Off" />
+          <meta property="fc:frame:button:1:action" content="link" />
+          <meta property="fc:frame:button:1:target" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
           <title>Won $${prizeAmount}!</title>
         </head>
         <body>
