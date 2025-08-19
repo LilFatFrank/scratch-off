@@ -3,7 +3,7 @@ import { supabaseAdmin } from "~/lib/supabaseAdmin";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userWallet, fid, username } = await request.json();
+    const { userWallet, fid, username, pfp } = await request.json();
 
     if (!userWallet) {
       return NextResponse.json(
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
           wallet: userWallet,
           fid,
           username,
+          pfp: pfp,
           created_at: new Date().toISOString(),
           amount_won: 0,
           cards_count: 0,

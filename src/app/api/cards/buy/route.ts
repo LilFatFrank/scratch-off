@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { createPublicClient, http, getContract } from "viem";
+import { base } from "wagmi/chains";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
-import { USDC_MINT } from "~/lib/constants";
+import { USDC_ADDRESS } from "~/lib/constants";
+import { erc20Abi } from "viem";
 
-// Payment verification function
+// Payment verification function for Base chain
 async function verifyPayment(
-  connection: Connection, 
   paymentTx: string, 
   expectedAmount: number, // Amount in USDC (e.g., 5 for 5 USDC)
   expectedRecipient?: string
 ): Promise<boolean> {
   const tolerance = 0.001; // 0.001 USDC tolerance
   try {
+    // Create public client for Base
+    const client = createPublicClient({
+      chain: base,
+      transport: http(),
+    });
+
     // Get transaction details
-    const transaction = await connection.getTransaction(paymentTx, {
-      commitment: 'confirmed',
-      maxSupportedTransactionVersion: 0
+    const transaction = await client.getTransactionReceipt({
+      hash: paymentTx as `0x${string}`,
     });
 
     if (!transaction) {
@@ -24,8 +30,8 @@ async function verifyPayment(
     }
 
     // Check if transaction was successful
-    if (transaction.meta?.err) {
-      console.log("Transaction failed:", transaction.meta.err);
+    if (transaction.status === 'reverted') {
+      console.log("Transaction failed");
       return false;
     }
 
@@ -36,37 +42,45 @@ async function verifyPayment(
       return false;
     }
 
-    const expectedRecipientPubkey = new PublicKey(recipientAddress);
-
     // Check if this is a USDC transfer to our admin wallet
-    const preBalances = transaction.meta?.preTokenBalances || [];
-    const postBalances = transaction.meta?.postTokenBalances || [];
-    
-    const adminPreBalance = preBalances.find(
-      balance => balance.mint === USDC_MINT && balance.owner === expectedRecipientPubkey.toString()
-    );
-    const adminPostBalance = postBalances.find(
-      balance => balance.mint === USDC_MINT && balance.owner === expectedRecipientPubkey.toString()
-    );
+    // Look for Transfer event from USDC contract to admin wallet
+    const transferEvent = transaction.logs.find(log => {
+      // Check if log is from USDC contract
+      if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+        return false;
+      }
+      
+      // Check if it's a Transfer event to admin wallet
+      // Transfer event signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+      const transferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+      
+      if (!log.topics[0] || log.topics[0] !== transferEventSignature) {
+        return false;
+      }
+      
+      // Check if recipient is admin wallet (topic[2] contains recipient address)
+      if (log.topics[2]) {
+        const recipient = '0x' + log.topics[2].slice(26); // Remove padding
+        return recipient.toLowerCase() === recipientAddress.toLowerCase();
+      }
+      
+      return false;
+    });
 
-    // Handle case where admin account was created in this transaction
-    if (!adminPreBalance && adminPostBalance) {
-      const amountReceived = adminPostBalance.uiTokenAmount.uiAmount || 0;
-      console.log("New admin account created, amount received:", amountReceived);
-      return Math.abs(amountReceived - expectedAmount) <= tolerance;
-    }
-
-    if (!adminPreBalance || !adminPostBalance) {
-      console.log("Admin token account not found in transaction");
+    if (!transferEvent) {
+      console.log("USDC transfer to admin wallet not found in transaction");
       return false;
     }
 
-    // Calculate the amount received
-    const amountReceived = (adminPostBalance.uiTokenAmount.uiAmount || 0) - 
-                          (adminPreBalance.uiTokenAmount.uiAmount || 0);
+    // Extract amount from transfer event
+    // Amount is in the data field (32 bytes)
+    const amountHex = transferEvent.data;
+    const amount = parseInt(amountHex, 16) / 1e6; // Convert from smallest units to USDC
 
+    console.log("Amount received:", amount, "Expected:", expectedAmount);
+    
     // Verify the amount (allow for small rounding differences)
-    return Math.abs(amountReceived - expectedAmount) <= tolerance;
+    return Math.abs(amount - expectedAmount) <= tolerance;
 
   } catch (error) {
     console.error("Error verifying payment:", error);
@@ -85,12 +99,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Setup connection
-    const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
-    
     // Verify payment transaction (1 USDC per card)
     const expectedAmount = numberOfCards; // 1 USDC per card
-    const paymentVerified = await verifyPayment(connection, paymentTx, expectedAmount);
+    const paymentVerified = await verifyPayment(paymentTx, expectedAmount);
     
     if (!paymentVerified) {
       console.log("Payment verification failed for transaction:", paymentTx);

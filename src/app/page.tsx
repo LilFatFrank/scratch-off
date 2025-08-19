@@ -1,23 +1,14 @@
 "use client";
-import { useState, useEffect, useContext, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import CardGrid from "~/components/card-grid";
-import ScratchOff from "~/components/scratch-off";
-import Image from "next/image";
+import { useContext, useEffect, useRef, useState } from "react";
+import { USDC_ADDRESS } from "~/lib/constants";
 import { AppContext } from "./context";
-import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import {
-  getAssociatedTokenAddressSync,
-  createAssociatedTokenAccountIdempotentInstruction,
-  createTransferCheckedInstruction,
-} from "@solana/spl-token";
-import {
-  TOKEN_PROGRAM_ID,
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
-import { sdk } from "@farcaster/miniapp-sdk";
-import { USDC_MINT } from "~/lib/constants";
 import { SET_USER } from "./context/actions";
+import { sdk } from "@farcaster/miniapp-sdk";
+import ScratchOff from "~/components/scratch-off";
+import CardGrid from "~/components/card-grid";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 
 interface Card {
   id: string;
@@ -60,7 +51,7 @@ export default function Home() {
       return {};
     } catch (error) {
       console.error("Failed to fetch user info:", error);
-      throw error;
+      return {}; // Return empty object instead of throwing
     }
   };
 
@@ -79,7 +70,7 @@ export default function Home() {
       return [];
     } catch (error) {
       console.error("Failed to fetch user reveals:", error);
-      throw error;
+      return []; // Return empty array instead of throwing
     }
   };
 
@@ -98,7 +89,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to fetch user cards:", error);
-      throw error;
+      return []; // Return empty array instead of throwing
     }
   };
 
@@ -197,84 +188,25 @@ export default function Home() {
       setBuyingCards(true);
       const RECIPIENT_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
 
+      const data = encodeFunctionData({
+        abi: erc20Abi,
+        functionName: "transfer",
+        args: [RECIPIENT_ADDRESS as `0x${string}`, parseUnits(numberOfCards.toString(), 6)],
+      });
+
+      const provider = await sdk.wallet.getEthereumProvider();
+      const hash = await provider?.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          to: USDC_ADDRESS,
+          data,
+          from: state.publicKey as `0x${string}`,
+        }],
+      });
+
       if (!RECIPIENT_ADDRESS) {
         console.error("Admin wallet address not configured");
         return;
-      }
-
-      const connection = new Connection(
-        process.env.NEXT_PUBLIC_RPC || "https://api.mainnet-beta.solana.com"
-      );
-      const recipient = new PublicKey(RECIPIENT_ADDRESS);
-      const mint = new PublicKey(USDC_MINT);
-
-      // Create transaction
-      const transaction = new Transaction();
-
-      // Get token accounts
-      const userTokenAccount = getAssociatedTokenAddressSync(
-        mint,
-        new PublicKey(state.publicKey)
-      );
-      const recipientTokenAccount = getAssociatedTokenAddressSync(
-        mint,
-        recipient
-      );
-
-      // Add create token account instruction for recipient if needed
-      transaction.add(
-        createAssociatedTokenAccountIdempotentInstruction(
-          new PublicKey(state.publicKey),
-          recipientTokenAccount,
-          recipient,
-          mint,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        )
-      );
-
-      // Add transfer instruction (1 USDC per card = 1,000,000 units with 6 decimals)
-      const amountPerCard = 1_000_000; // 1 USDC
-      const totalAmount = amountPerCard * numberOfCards;
-
-      transaction.add(
-        createTransferCheckedInstruction(
-          userTokenAccount,
-          mint,
-          recipientTokenAccount,
-          new PublicKey(state.publicKey),
-          totalAmount,
-          6
-        )
-      );
-
-      // Get fresh blockhash right before sending
-      const { blockhash, lastValidBlockHeight } =
-        await connection.getLatestBlockhash("finalized");
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = new PublicKey(state.publicKey);
-
-      const provider = await sdk.wallet.getSolanaProvider();
-      const response = await provider?.signAndSendTransaction({
-        transaction,
-      });
-
-      if (!response) {
-        throw new Error("Transaction failed");
-      }
-
-      // Wait for confirmation
-      const confirmation = await connection.confirmTransaction(
-        {
-          signature: response.signature,
-          blockhash,
-          lastValidBlockHeight,
-        },
-        "confirmed"
-      );
-
-      if (confirmation.value.err) {
-        throw new Error("Transaction failed");
       }
 
       // Send request to backend to create cards
@@ -283,7 +215,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userWallet: state.publicKey,
-          paymentTx: response.signature,
+          paymentTx: hash,
           numberOfCards,
         }),
       });
@@ -315,7 +247,6 @@ export default function Home() {
     if (state.publicKey && state.user) {
       const testAddMiniApp = async () => {
         try {
-          console.log("🔍 Testing addMiniApp at app startup...");
           const result = await sdk.actions.addMiniApp();
           if (result.notificationDetails && result.notificationDetails.token && !state.user?.notification_enabled) {
             try {
@@ -574,6 +505,11 @@ export default function Home() {
             duration: 0.4,
             ease: "easeOut",
             delay: 0.6,
+          }}
+          onClick={() => {
+            if (selectedCard) {
+              setSelectedCard(null);
+            }
           }}
         >
           <p className="text-[14px] leading-[90%] font-medium text-[#fff]">

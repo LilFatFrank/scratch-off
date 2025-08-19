@@ -1,3 +1,5 @@
+import { type AccountAssociation } from '@farcaster/miniapp-core/src/manifest';
+
 /**
  * Application constants and configuration values.
  *
@@ -14,63 +16,71 @@
  * The base URL of the application.
  * Used for generating absolute URLs for assets and API endpoints.
  */
-export const APP_URL = process.env.NEXT_PUBLIC_URL!;
+export const APP_URL: string = process.env.NEXT_PUBLIC_URL!;
 
 /**
  * The name of the mini app as displayed to users.
  * Used in titles, headers, and app store listings.
  */
-export const APP_NAME = 'Scratch Off';
+export const APP_NAME: string = 'Scratch Off';
 
 /**
  * A brief description of the mini app's functionality.
  * Used in app store listings and metadata.
  */
-export const APP_DESCRIPTION = 'Scratch to win big!';
+export const APP_DESCRIPTION: string = 'Scratch to win big!';
 
 /**
  * The primary category for the mini app.
  * Used for app store categorization and discovery.
  */
-export const APP_PRIMARY_CATEGORY = 'finance';
+export const APP_PRIMARY_CATEGORY: string = 'finance';
 
 /**
  * Tags associated with the mini app.
  * Used for search and discovery in app stores.
  */
-export const APP_TAGS = ['defi', 'social'];
+export const APP_TAGS: string[] = ['defi', 'social'];
 
 // --- Asset URLs ---
 /**
  * URL for the app's icon image.
  * Used in app store listings and UI elements.
  */
-export const APP_ICON_URL = `${APP_URL}/assets/scratch-card-image.png`;
+export const APP_ICON_URL: string = `${APP_URL}/assets/splash-image.jpg`;
 
 /**
  * URL for the app's Open Graph image.
  * Used for social media sharing and previews.
  */
-export const APP_OG_IMAGE_URL = `${APP_URL}/assets/og-hero-image.png`;
+export const APP_OG_IMAGE_URL: string = `${APP_URL}/assets/og-hero-image.png`;
 
 /**
  * URL for the app's splash screen image.
  * Displayed during app loading.
  */
-export const APP_SPLASH_URL = `${APP_URL}/assets/splash-image.jpg`;
+export const APP_SPLASH_URL: string = `${APP_URL}/assets/splash-image.jpg`;
 
 /**
  * Background color for the splash screen.
  * Used as fallback when splash image is loading.
  */
-export const APP_SPLASH_BACKGROUND_COLOR = '#fff';
+export const APP_SPLASH_BACKGROUND_COLOR: string = '#ffffff';
+
+/**
+ * Account association for the mini app.
+ * Used to associate the mini app with a Farcaster account.
+ * If not provided, the mini app will be unsigned and have limited capabilities.
+ */
+export const APP_ACCOUNT_ASSOCIATION: AccountAssociation | undefined =
+  undefined;
 
 // --- UI Configuration ---
 /**
  * Text displayed on the main action button.
  * Used for the primary call-to-action in the mini app.
  */
-export const APP_BUTTON_TEXT = 'Scratch Off';
+export const APP_BUTTON_TEXT: string = 'Scratch Off';
 
 // --- Integration Configuration ---
 /**
@@ -80,7 +90,7 @@ export const APP_BUTTON_TEXT = 'Scratch Off';
  * Neynar webhook endpoint. Otherwise, falls back to a local webhook
  * endpoint for development and testing.
  */
-export const APP_WEBHOOK_URL =
+export const APP_WEBHOOK_URL: string =
   process.env.NEYNAR_API_KEY && process.env.NEYNAR_CLIENT_ID
     ? `https://api.neynar.com/f/app/${process.env.NEYNAR_CLIENT_ID}/event`
     : `${APP_URL}/api/webhook`;
@@ -92,7 +102,7 @@ export const APP_WEBHOOK_URL =
  * When false, wallet functionality is completely hidden from the UI.
  * Useful for mini apps that don't require wallet integration.
  */
-export const USE_WALLET = true;
+export const USE_WALLET: boolean = true;
 
 /**
  * Flag to enable/disable analytics tracking.
@@ -101,7 +111,27 @@ export const USE_WALLET = true;
  * When false, analytics collection is disabled.
  * Useful for privacy-conscious users or development environments.
  */
-export const ANALYTICS_ENABLED = true;
+export const ANALYTICS_ENABLED: boolean = true;
+
+/**
+ * Required chains for the mini app.
+ *
+ * Contains an array of CAIP-2 identifiers for blockchains that the mini app requires.
+ * If the host does not support all chains listed here, it will not render the mini app.
+ * If empty or undefined, the mini app will be rendered regardless of chain support.
+ *
+ * Supported chains: eip155:1, eip155:137, eip155:42161, eip155:10, eip155:8453,
+ * solana:mainnet, solana:devnet
+ */
+export const APP_REQUIRED_CHAINS: string[] = ['eip155:8453']; // Base chain only
+
+/**
+ * Return URL for the mini app.
+ *
+ * If provided, the mini app will be rendered with a return URL to be rendered if the
+ * back button is pressed from the home page.
+ */
+export const RETURN_URL: string | undefined = undefined;
 
 // PLEASE DO NOT UPDATE THIS
 export const SIGNED_KEY_REQUEST_VALIDATOR_EIP_712_DOMAIN = {
@@ -119,6 +149,11 @@ export const SIGNED_KEY_REQUEST_TYPE = [
   { name: 'deadline', type: 'uint256' },
 ];
 
+
+export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+export const CANVAS_WIDTH = 343;
+export const CANVAS_HEIGHT = 418;
+export const SCRATCH_RADIUS = 24;
 export const APP_COLORS = {
   DEFAULT: "#7727DE",
   WON: "#00A151",
@@ -126,9 +161,3 @@ export const APP_COLORS = {
   LOADING: "#FACC15",
   ERROR: "#8E3033",
 };
-
-export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-
-export const CANVAS_WIDTH = 343;
-export const CANVAS_HEIGHT = 418;
-export const SCRATCH_RADIUS = 24;
