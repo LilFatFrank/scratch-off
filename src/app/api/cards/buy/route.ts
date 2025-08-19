@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, http, getContract } from "viem";
+import { createPublicClient, http } from "viem";
 import { base } from "wagmi/chains";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
 import { USDC_ADDRESS } from "~/lib/constants";
-import { erc20Abi } from "viem";
 
 // Payment verification function for Base chain
 async function verifyPayment(
