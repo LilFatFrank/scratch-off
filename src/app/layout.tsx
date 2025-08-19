@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+
 import "~/app/globals.css";
 import { Providers } from "~/app/providers";
-import Wrapper from "~/components/wrapper";
 import { AppContextProvider } from "./context";
+import Wrapper from "~/components/wrapper";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -31,7 +32,8 @@ export const metadata: Metadata = {
   other: {
     "fc:frame": JSON.stringify({
       version: "next",
-      imageUrl: "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
+      imageUrl:
+        "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
       button: {
         title: "Scratch Off",
         action: {

@@ -1,6 +1,6 @@
 'use client';
+
 import { MiniAppProvider } from '@neynar/react';
-import { SafeFarcasterSolanaProvider } from '~/components/providers/SafeFarcasterSolanaProvider';
 import { ANALYTICS_ENABLED } from '~/lib/constants';
 
 export function Providers({
@@ -8,16 +8,12 @@ export function Providers({
 }: {
   children: React.ReactNode;
 }) {
-  const solanaEndpoint =
-    process.env.SOLANA_RPC_ENDPOINT || 'https://solana-rpc.publicnode.com';
   return (
       <MiniAppProvider
         analyticsEnabled={ANALYTICS_ENABLED}
         backButtonEnabled={true}
       >
-        <SafeFarcasterSolanaProvider endpoint={solanaEndpoint}>
-          {children}
-        </SafeFarcasterSolanaProvider>
+        {children}
       </MiniAppProvider>
   );
 }

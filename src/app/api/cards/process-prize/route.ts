@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
-import { 
-  getAssociatedTokenAddressSync, 
-  createAssociatedTokenAccountIdempotentInstruction, 
-  createTransferCheckedInstruction 
-} from "@solana/spl-token";
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { createPublicClient, createWalletClient, http, parseUnits } from "viem";
+import { base } from "wagmi/chains";
+import { privateKeyToAccount } from "viem/accounts";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
-// Store reveals in Supabase instead of Redis
-import { USDC_MINT } from "~/lib/constants";
+import { USDC_ADDRESS } from "~/lib/constants";
+import { erc20Abi } from "viem";
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,74 +114,40 @@ export async function POST(request: NextRequest) {
 
     // Process USDC payment for winners
     try {
-      // Get admin wallet keypair
-      const adminPrivateKey = process.env.SOLANA_WALLET_PRIVATE_KEY;
+      // Get admin wallet private key
+      const adminPrivateKey = process.env.ADMIN_WALLET_PRIVATE_KEY;
       if (!adminPrivateKey) {
         throw new Error('Admin wallet private key not configured');
       }
 
-      // Parse private key from string array
-      const privateKeyArray = JSON.parse(adminPrivateKey);
-      if (!Array.isArray(privateKeyArray)) {
-        throw new Error('Invalid private key format');
-      }
-      const privateKeyBytes = new Uint8Array(privateKeyArray);
+      // Create admin account from private key
+      const adminAccount = privateKeyToAccount(adminPrivateKey as `0x${string}`);
       
-      const adminKeypair = Keypair.fromSecretKey(privateKeyBytes);
-      const adminWallet = adminKeypair.publicKey;
-      const userWalletPubkey = new PublicKey(userWallet);
-      const mint = new PublicKey(USDC_MINT);
+      // Create public client for Base
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http(),
+      });
 
-      // Setup connection
-      const connection = new Connection(process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com');
+      // Create wallet client for Base
+      const client = createWalletClient({
+        account: adminAccount,
+        chain: base,
+        transport: http(),
+      });
 
-      // Create transaction
-      const transaction = new Transaction();
+      // Send USDC transfer
+      const tx = await client.writeContract({
+        address: USDC_ADDRESS,
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [userWallet as `0x${string}`, parseUnits(prizeAmount.toString(), 6)],
+      });
 
-      // Get token accounts
-      const adminTokenAccount = getAssociatedTokenAddressSync(mint, adminWallet);
-      const userTokenAccount = getAssociatedTokenAddressSync(mint, userWalletPubkey);
-
-      // Add create token account instruction if needed
-      transaction.add(
-        createAssociatedTokenAccountIdempotentInstruction(
-          adminWallet,
-          userTokenAccount,
-          userWalletPubkey,
-          mint,
-          TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
-        )
-      );
-
-      // Add transfer instruction
-      transaction.add(
-        createTransferCheckedInstruction(
-          adminTokenAccount,
-          mint,
-          userTokenAccount,
-          adminWallet,
-          prizeAmount * 1e6, // Convert to USDC decimals (6)
-          6
-        )
-      );
-
-      // Get latest blockhash
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = adminWallet;
-
-      // Sign and send transaction
-      const tx = await connection.sendTransaction(transaction, [adminKeypair]);
+      // Wait for transaction confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: tx });
       
-      // Wait for confirmation
-      const confirmation = await connection.confirmTransaction({
-        signature: tx,
-        blockhash,
-        lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight
-      }, 'confirmed');
-
-      if (confirmation.value.err) {
+      if (receipt.status === 'reverted') {
         throw new Error("Payout transaction failed");
       }
 

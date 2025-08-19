@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}" />
           <meta property="fc:frame:button:1" content="Play Scratch Off" />
-          <meta property="fc:frame:button:1:action" content="launch_frame" />
+          <meta property="fc:frame:button:1:action" content="link" />
           <meta property="fc:frame:button:1:target" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
           <title>Won $${prizeAmount}!</title>
         </head>
