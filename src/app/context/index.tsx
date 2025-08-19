@@ -75,7 +75,7 @@ export const AppContextProvider: FC<ContextProps> = ({ children }) => {
 
   useEffect(() => {
     getProvider();
-  }, [context?.user?.fid]);
+  }, []);
 
   return (
     <AppContext.Provider value={[state, dispatch]}>
