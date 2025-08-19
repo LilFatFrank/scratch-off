@@ -4,87 +4,111 @@ import { base } from "wagmi/chains";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
 import { USDC_ADDRESS } from "~/lib/constants";
 
-// Payment verification function for Base chain
+// Payment verification function for Base chain with retry logic
 async function verifyPayment(
   paymentTx: string, 
   expectedAmount: number, // Amount in USDC (e.g., 5 for 5 USDC)
   expectedRecipient?: string
 ): Promise<boolean> {
   const tolerance = 0.001; // 0.001 USDC tolerance
-  try {
-    // Create public client for Base
-    const client = createPublicClient({
-      chain: base,
-      transport: http(),
-    });
+  const maxRetries = 5;
+  const baseDelay = 1000; // 1 second
 
-    // Get transaction details
-    const transaction = await client.getTransactionReceipt({
-      hash: paymentTx as `0x${string}`,
-    });
+  // Create public client for Base
+  const client = createPublicClient({
+    chain: base,
+    transport: http(),
+  });
 
-    if (!transaction) {
-      console.log("Transaction not found:", paymentTx);
-      return false;
-    }
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt + 1}/${maxRetries} to verify transaction:`, paymentTx);
 
-    // Check if transaction was successful
-    if (transaction.status === 'reverted') {
-      console.log("Transaction failed");
-      return false;
-    }
+      // Get transaction details
+      const transaction = await client.getTransactionReceipt({
+        hash: paymentTx as `0x${string}`,
+      });
 
-    // Get the expected recipient (admin wallet)
-    const recipientAddress = expectedRecipient || process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
-    if (!recipientAddress) {
-      console.log("No recipient address configured");
-      return false;
-    }
-
-    // Check if this is a USDC transfer to our admin wallet
-    // Look for Transfer event from USDC contract to admin wallet
-    const transferEvent = transaction.logs.find(log => {
-      // Check if log is from USDC contract
-      if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+      if (!transaction) {
+        console.log(`Transaction not found on attempt ${attempt + 1}, retrying...`);
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, attempt)));
+          continue;
+        }
         return false;
       }
-      
-      // Check if it's a Transfer event to admin wallet
-      // Transfer event signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
-      const transferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-      
-      if (!log.topics[0] || log.topics[0] !== transferEventSignature) {
+
+      // Check if transaction was successful
+      if (transaction.status === 'reverted') {
+        console.log("Transaction failed (reverted)");
         return false;
       }
-      
-      // Check if recipient is admin wallet (topic[2] contains recipient address)
-      if (log.topics[2]) {
-        const recipient = '0x' + log.topics[2].slice(26); // Remove padding
-        return recipient.toLowerCase() === recipientAddress.toLowerCase();
+
+      // Get the expected recipient (admin wallet)
+      const recipientAddress = expectedRecipient || process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS;
+      if (!recipientAddress) {
+        console.log("No recipient address configured");
+        return false;
       }
+
+      // Check if this is a USDC transfer to our admin wallet
+      // Look for Transfer event from USDC contract to admin wallet
+      const transferEvent = transaction.logs.find(log => {
+        // Check if log is from USDC contract
+        if (log.address.toLowerCase() !== USDC_ADDRESS.toLowerCase()) {
+          return false;
+        }
+        
+        // Check if it's a Transfer event to admin wallet
+        // Transfer event signature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+        const transferEventSignature = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+        
+        if (!log.topics[0] || log.topics[0] !== transferEventSignature) {
+          return false;
+        }
+        
+        // Check if recipient is admin wallet (topic[2] contains recipient address)
+        if (log.topics[2]) {
+          const recipient = '0x' + log.topics[2].slice(26); // Remove padding
+          return recipient.toLowerCase() === recipientAddress.toLowerCase();
+        }
+        
+        return false;
+      });
+
+      if (!transferEvent) {
+        console.log("USDC transfer to admin wallet not found in transaction");
+        return false;
+      }
+
+      // Extract amount from transfer event
+      // Amount is in the data field (32 bytes)
+      const amountHex = transferEvent.data;
+      const amount = parseInt(amountHex, 16) / 1e6; // Convert from smallest units to USDC
+
+      console.log("Amount received:", amount, "Expected:", expectedAmount);
       
-      return false;
-    });
+      // Verify the amount (allow for small rounding differences)
+      return Math.abs(amount - expectedAmount) <= tolerance;
 
-    if (!transferEvent) {
-      console.log("USDC transfer to admin wallet not found in transaction");
-      return false;
-    }
-
-    // Extract amount from transfer event
-    // Amount is in the data field (32 bytes)
-    const amountHex = transferEvent.data;
-    const amount = parseInt(amountHex, 16) / 1e6; // Convert from smallest units to USDC
-
-    console.log("Amount received:", amount, "Expected:", expectedAmount);
-    
-    // Verify the amount (allow for small rounding differences)
-    return Math.abs(amount - expectedAmount) <= tolerance;
-
-  } catch (error) {
-    console.error("Error verifying payment:", error);
-    return false;
+         } catch (error) {
+       console.error(`Error verifying payment on attempt ${attempt + 1}:`, error);
+       
+       // If it's a TransactionReceiptNotFoundError, retry
+       if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.includes('TransactionReceiptNotFoundError')) {
+         if (attempt < maxRetries - 1) {
+           console.log(`Transaction not mined yet, retrying in ${baseDelay * Math.pow(2, attempt)}ms...`);
+           await new Promise(resolve => setTimeout(resolve, baseDelay * Math.pow(2, attempt)));
+           continue;
+         }
+       }
+       
+       // For other errors, don't retry
+       return false;
+     }
   }
+
+  return false;
 }
 
 export async function POST(request: NextRequest) {
