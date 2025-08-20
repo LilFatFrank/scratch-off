@@ -79,7 +79,7 @@ export default function ScratchOff({
     try {
 
       await actions.composeCast({
-        text: `${frameUrl}`.trim(),
+        text: `${frameUrl.trim()}`.trim(),
       })
       
     } catch (error) {

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       <!DOCTYPE html>
       <html>
         <head>
-          <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
+          <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"${baseUrl}","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
           <title>Won $${prizeAmount}!</title>
         </head>
         <body>
