@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { APP_SPLASH_BACKGROUND_COLOR, APP_SPLASH_URL } from "~/lib/constants";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,11 +14,7 @@ export async function GET(request: NextRequest) {
       <!DOCTYPE html>
       <html>
         <head>
-          <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}" />
-          <meta property="fc:frame:button:1" content="Play Scratch Off" />
-          <meta property="fc:frame:button:1:action" content="launch_miniapp" />
-          <meta property="fc:frame:button:1:target" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
+          <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
           <title>Won $${prizeAmount}!</title>
         </head>
         <body>

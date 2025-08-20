@@ -43,8 +43,8 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
               className="relative"
             >
               {card.scratched ? (
-                <div className="absolute rotate-[-4deg] font-[ABCGaisyr] text-[32px] inset-0 bg-black/20 rounded-lg z-20 text-white flex items-center justify-center font-bold">
-                  {card.prize_amount ? `$${card.prize_amount}` : ""}
+                <div className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 bg-black/10 rounded-lg z-20 flex items-center justify-center font-bold text-center ${card.prize_amount ? "text-white" : "text-[#5e5e5e]/80"}`}>
+                  {card.prize_amount ? `$${card.prize_amount}` : "No win!"}
                 </div>
               ) : null}
               <div
