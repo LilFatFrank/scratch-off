@@ -10,6 +10,7 @@ import {
   CANVAS_WIDTH,
   SCRATCH_RADIUS,
 } from "~/lib/constants";
+import { useMiniApp } from "@neynar/react";
 // import sdk from "@farcaster/miniapp-sdk";
 
 interface Card {
@@ -46,6 +47,8 @@ export default function ScratchOff({
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [shareButtonText, setShareButtonText] = useState("Share Win");
 
+  const { actions } = useMiniApp();
+
   // Mouse handlers for card tilt
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = cardRef.current?.getBoundingClientRect();
@@ -74,21 +77,10 @@ export default function ScratchOff({
     }).toString();
 
     try {
-      // Copy the frame URL to clipboard
-      await navigator.clipboard.writeText(frameUrl);
-      
-      // Update button text temporarily
-      setShareButtonText("Copied!");
-      
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Reset button text after 2 seconds
-      timeoutRef.current = setTimeout(() => {
-        setShareButtonText("Share Win");
-      }, 2000);
+
+      await actions.composeCast({
+        text: `${frameUrl}`,
+      })
       
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);

@@ -114,6 +114,7 @@ export default function Home() {
       if (userInfo.status === "fulfilled")
         dispatch({ type: SET_USER, payload: userInfo.value });
       if (userReveals.status === "fulfilled") setUserReveals(userReveals.value);
+      callReady();
     } catch (error) {
       console.error("Error in fetching user info", error);
     } finally {
@@ -121,21 +122,16 @@ export default function Home() {
     }
   };
 
-  // Call ready when app is fully loaded
-  useEffect(() => {
-    const callReady = async () => {
-      if (state.publicKey) {
-        try {
-          await sdk.actions.ready();
-          readyCalled.current = true;
-        } catch (error) {
-          console.error("Failed to signal app ready:", error);
-        }
+  const callReady = async () => {
+    if (state.publicKey) {
+      try {
+        await sdk.actions.ready();
+        readyCalled.current = true;
+      } catch (error) {
+        console.error("Failed to signal app ready:", error);
       }
-    };
-
-    callReady();
-  }, [state.publicKey]);
+    }
+  };
 
   // Fetch all data when wallet connects
   useEffect(() => {
@@ -191,17 +187,22 @@ export default function Home() {
       const data = encodeFunctionData({
         abi: erc20Abi,
         functionName: "transfer",
-        args: [RECIPIENT_ADDRESS as `0x${string}`, parseUnits(numberOfCards.toString(), 6)],
+        args: [
+          RECIPIENT_ADDRESS as `0x${string}`,
+          parseUnits(numberOfCards.toString(), 6),
+        ],
       });
 
       const provider = await sdk.wallet.getEthereumProvider();
       const hash = await provider?.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          to: USDC_ADDRESS,
-          data,
-          from: state.publicKey as `0x${string}`,
-        }],
+        method: "eth_sendTransaction",
+        params: [
+          {
+            to: USDC_ADDRESS,
+            data,
+            from: state.publicKey as `0x${string}`,
+          },
+        ],
       });
 
       if (!RECIPIENT_ADDRESS) {
@@ -248,7 +249,11 @@ export default function Home() {
       const testAddMiniApp = async () => {
         try {
           const result = await sdk.actions.addMiniApp();
-          if (result.notificationDetails && result.notificationDetails.token && !state.user?.notification_enabled) {
+          if (
+            result.notificationDetails &&
+            result.notificationDetails.token &&
+            !state.user?.notification_enabled
+          ) {
             try {
               await fetch(`/api/neynar/welcome-notification`, {
                 method: "POST",

@@ -34,7 +34,7 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
               delay: index * 0.1,
               layout: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
             }}
-            className="cursor-pointer h-fit"
+            className="cursor-pointer h-fit relative"
             onClick={() => onCardSelect(card)}
           >
             <motion.div
@@ -42,6 +42,11 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
               whileTap={{ scale: 0.95 }}
               className="relative"
             >
+              {card.scratched ? (
+                <div className="absolute rotate-[-4deg] font-[ABCGaisyr] text-[32px] inset-0 bg-black/20 rounded-lg z-20 text-white flex items-center justify-center font-bold">
+                  {card.prize_amount ? `$${card.prize_amount}` : ""}
+                </div>
+              ) : null}
               <div
                 style={{
                   position: "absolute",

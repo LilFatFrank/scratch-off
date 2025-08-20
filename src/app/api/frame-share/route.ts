@@ -5,7 +5,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const prizeAmount = searchParams.get("prize") || "0";
     const username = searchParams.get("username") || "";
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://scratch-off-xi.vercel.app';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_URL || "https://scratch-off-xi.vercel.app";
 
     // Create Frame HTML that uses your generated image
     const frameHtml = `
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
           <meta property="fc:frame" content="vNext" />
           <meta property="fc:frame:image" content="${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}" />
           <meta property="fc:frame:button:1" content="Play Scratch Off" />
-          <meta property="fc:frame:button:1:action" content="link" />
+          <meta property="fc:frame:button:1:action" content="launch_miniapp" />
           <meta property="fc:frame:button:1:target" content="https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off" />
           <title>Won $${prizeAmount}!</title>
         </head>
@@ -28,7 +29,8 @@ export async function GET(request: NextRequest) {
     return new Response(frameHtml, {
       headers: {
         "Content-Type": "text/html",
-        "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+        "Cache-Control":
+          "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
       },
     });
   } catch (error) {
