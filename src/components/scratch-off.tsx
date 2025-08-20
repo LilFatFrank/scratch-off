@@ -79,7 +79,8 @@ export default function ScratchOff({
     try {
 
       await actions.composeCast({
-        text: `${frameUrl.trim()}`.trim(),
+        text: `I just won $${prizeAmount}!`,
+        embeds: [frameUrl],
       })
       
     } catch (error) {

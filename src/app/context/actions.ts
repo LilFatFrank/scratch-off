@@ -4,3 +4,6 @@ export const SET_HAS_PROVIDER = 'SET_HAS_PROVIDER';
 export const SET_PUBLIC_KEY = 'SET_PUBLIC_KEY';
 export const SET_USER = 'SET_USER';
 export const SET_IS_IN_MINIAPP = 'SET_IS_IN_MINIAPP';
+export const SET_SELECTED_CARD = 'SET_SELECTED_CARD';
+export const SET_CARDS = 'SET_CARDS';
+export const SET_USER_REVEALS = 'SET_USER_REVEALS';
