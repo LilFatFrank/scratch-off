@@ -1,7 +1,9 @@
 "use client";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AppContext } from "./context";
 import {
+  SET_APP_BACKGROUND,
+  SET_APP_STATS,
   SET_CARDS,
   SET_SELECTED_CARD,
   SET_USER,
@@ -12,10 +14,12 @@ import CardGrid from "~/components/card-grid";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./interface/card";
 import {
+  fetchAppStats,
   fetchUserCards,
   fetchUserInfo,
   fetchUserReveals,
 } from "~/lib/userapis";
+import { APP_COLORS } from "~/lib/constants";
 
 export default function Home() {
   const [state, dispatch] = useContext(AppContext);
@@ -53,9 +57,25 @@ export default function Home() {
     }
   };
 
+  const refreshAppStats = async () => {
+    try {
+      const appStats = await fetchAppStats();
+      dispatch({ type: SET_APP_STATS, payload: appStats });
+    } catch (e) {
+      console.log("error refreshing app stats", e);
+    }
+  };
+
   const handleCardSelect = (card: Card) => {
     dispatch({ type: SET_SELECTED_CARD, payload: card });
   };
+
+  useEffect(() => {
+    dispatch({
+      type: SET_APP_BACKGROUND,
+      payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.DEFAULT})`,
+    });
+  }, []);
 
   return (
     <AnimatePresence mode="wait">
@@ -84,6 +104,7 @@ export default function Home() {
               refreshUserInfo();
               refreshReveals();
               refreshCards();
+              refreshAppStats();
             }}
           />
         </motion.div>

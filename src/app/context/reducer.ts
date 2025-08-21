@@ -1,5 +1,5 @@
 import { Action } from "./action";
-import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER, SET_USER_REVEALS } from "./actions";
+import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER, SET_USER_REVEALS } from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -48,6 +48,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         userReveals: action.payload
+      }
+    case SET_APP_STATS:
+      return {
+        ...state,
+        appStats: action.payload
       }
     default:
       return state;

@@ -160,4 +160,5 @@ export const APP_COLORS = {
   LOST: "#5E5E5E",
   LOADING: "#FACC15",
   ERROR: "#8E3033",
+  LEADERBOARD: "#3B2B06",
 };

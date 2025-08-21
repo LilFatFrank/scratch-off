@@ -1,5 +1,6 @@
 import { User } from "../interface/user";
 import { Card } from "../interface/card";
+import { AppStats } from "../interface/appStats";
 
 export interface AppState {
   appBackground: string;
@@ -12,6 +13,7 @@ export interface AppState {
   cards: Card[] | [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userReveals: any[] | [];
+  appStats: AppStats | null;
 }
 
 const initialState: AppState = {
@@ -24,6 +26,7 @@ const initialState: AppState = {
   selectedCard: null, 
   cards: [],
   userReveals: [],
+  appStats: null,
 };
 
 export default initialState;

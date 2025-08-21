@@ -7,3 +7,4 @@ export const SET_IS_IN_MINIAPP = 'SET_IS_IN_MINIAPP';
 export const SET_SELECTED_CARD = 'SET_SELECTED_CARD';
 export const SET_CARDS = 'SET_CARDS';
 export const SET_USER_REVEALS = 'SET_USER_REVEALS';
+export const SET_APP_STATS = 'SET_APP_STATS';

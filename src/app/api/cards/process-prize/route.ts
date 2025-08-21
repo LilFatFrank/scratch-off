@@ -8,7 +8,7 @@ import { erc20Abi } from "viem";
 
 export async function POST(request: NextRequest) {
   try {
-    const { cardId, userWallet, prizeAmount } = await request.json();
+    const { cardId, userWallet, prizeAmount, username, pfp } = await request.json();
     
     if (!cardId || !userWallet || prizeAmount === undefined) {
       return NextResponse.json(
@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
           payment_tx: updatedCard.payment_tx,
           payout_tx: null, // Will be set if payment succeeds
           won: prizeAmount > 0,
+          username: username,
+          pfp: pfp,
           created_at: new Date().toISOString()
         })
         .select();
@@ -104,6 +106,28 @@ export async function POST(request: NextRequest) {
 
     // If no prize, return early
     if (prizeAmount === 0) {
+      // Update app stats - increment reveals only (no winnings to add)
+      const { data: currentStats, error: fetchStatsError } = await supabaseAdmin
+        .from('stats')
+        .select('reveals')
+        .eq('id', 1)
+        .single();
+
+      if (!fetchStatsError && currentStats) {
+        const { error: statsError } = await supabaseAdmin
+          .from('stats')
+          .update({ 
+            reveals: currentStats.reveals + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
+
+        if (statsError) {
+          console.error('Error updating app stats:', statsError);
+          // Don't fail the request if stats update fails
+        }
+      }
+
       return NextResponse.json({
         success: true,
         prizeAmount: 0,
@@ -189,6 +213,29 @@ export async function POST(request: NextRequest) {
         }
       } catch (error) {
         console.error("Failed to update reveal with payout:", error);
+      }
+
+      // Update app stats - increment reveals and add winnings
+      const { data: currentStats, error: fetchStatsError } = await supabaseAdmin
+        .from('stats')
+        .select('reveals, winnings')
+        .eq('id', 1)
+        .single();
+
+      if (!fetchStatsError && currentStats) {
+        const { error: statsError } = await supabaseAdmin
+          .from('stats')
+          .update({ 
+            reveals: currentStats.reveals + 1,
+            winnings: currentStats.winnings + prizeAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
+
+        if (statsError) {
+          console.error('Error updating app stats:', statsError);
+          // Don't fail the request if stats update fails
+        }
       }
 
       return NextResponse.json({

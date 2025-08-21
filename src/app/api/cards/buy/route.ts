@@ -196,6 +196,28 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if user update fails
     }
 
+    // Update app stats - increment cards count
+    const { data: currentStats, error: fetchStatsError } = await supabaseAdmin
+      .from('stats')
+      .select('cards')
+      .eq('id', 1)
+      .single();
+
+    if (!fetchStatsError && currentStats) {
+      const { error: statsError } = await supabaseAdmin
+        .from('stats')
+        .update({ 
+          cards: currentStats.cards + numberOfCards,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
+
+      if (statsError) {
+        console.error('Error updating app stats:', statsError);
+        // Don't fail the request if stats update fails
+      }
+    }
+
     console.log('New cards created:', newCards);
     return NextResponse.json({ 
       success: true, 

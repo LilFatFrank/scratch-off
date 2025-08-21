@@ -10,4 +10,5 @@ export interface User {
     total_wins: number,
     notification_enabled?: boolean,
     notification_token?: string | null,
+    pfp: string,
 }

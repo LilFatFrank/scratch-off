@@ -6,25 +6,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const userWallet = searchParams.get('userWallet');
 
-    if (!userWallet) {
-      return NextResponse.json(
-        { error: "Missing userWallet parameter" },
-        { status: 400 }
-      );
-    }
-
-    // Get user's reveals from Supabase
-    const { data: reveals, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('reveals')
       .select('*')
-      .eq('user_wallet', userWallet)
       .order('created_at', { ascending: false })
-      .limit(3);
+      .limit(100);
+
+    // If userWallet is provided, filter by user
+    if (userWallet) {
+      query = query.eq('user_wallet', userWallet);
+    }
+
+    // Get reveals from Supabase
+    const { data: reveals, error } = await query;
 
     if (error) {
-      console.error('Error fetching user reveals:', error);
+      console.error('Error fetching reveals:', error);
       return NextResponse.json(
-        { error: "Failed to fetch user reveals" },
+        { error: "Failed to fetch reveals" },
         { status: 500 }
       );
     }
@@ -35,9 +34,9 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Error fetching user reveals:", error);
+    console.error("Error fetching reveals:", error);
     return NextResponse.json(
-      { error: "Failed to fetch user reveals" },
+      { error: "Failed to fetch reveals" },
       { status: 500 }
     );
   }

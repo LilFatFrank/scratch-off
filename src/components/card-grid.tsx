@@ -18,13 +18,18 @@ interface Card {
 interface CardGridProps {
   cards: Card[];
   onCardSelect: (card: Card) => void;
+  showViewAll?: boolean;
+  onViewAll?: () => void;
 }
 
-export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
+export default function CardGrid({ cards, onCardSelect, showViewAll = false, onViewAll }: CardGridProps) {
+  const displayCards = showViewAll ? cards.slice(0, 7) : cards;
+  const hasMoreCards = showViewAll && cards.length > 7;
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-4 gap-4 mx-auto">
-        {cards.map((card, index) => (
+        {displayCards.map((card, index) => (
           <motion.div
             key={card.id}
             layoutId={`card-${card.id}`}
@@ -82,6 +87,69 @@ export default function CardGrid({ cards, onCardSelect }: CardGridProps) {
             </motion.div>
           </motion.div>
         ))}
+        
+        {/* View All Overlay */}
+        {hasMoreCards && (
+          <motion.div
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{
+              delay: 7 * 0.1,
+              layout: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
+            }}
+            className="cursor-pointer h-fit relative"
+            onClick={onViewAll}
+          >
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative"
+            >
+              {/* Darker background overlay */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  left: 0,
+                  width: 80,
+                  height: 102,
+                  background: "rgba(0, 0, 0, 0.6)",
+                  filter: "blur(8px)",
+                  borderRadius: 4,
+                  zIndex: 0,
+                }}
+              />
+              
+              {/* Scratched card image */}
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                }}
+              >
+                <Image
+                  src="/assets/scratched-card-image.png"
+                  alt="View All Cards"
+                  unoptimized
+                  priority
+                  width={80}
+                  height={102}
+                  className="opacity-60"
+                />
+              </div>
+              
+              {/* View All text overlay */}
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center rotate-[-4deg]">
+                <p className="text-white font-[ABCGaisyr] text-[14px] font-bold leading-[90%] mb-1 italic">
+                  VIEW
+                </p>
+                <p className="text-white font-[ABCGaisyr] text-[14px] font-bold leading-[90%] italic">
+                  ALL
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

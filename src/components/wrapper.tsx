@@ -4,6 +4,7 @@ import { FC, useContext, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
+  SET_APP_STATS,
   SET_CARDS,
   SET_SELECTED_CARD,
   SET_USER,
@@ -13,22 +14,23 @@ import sdk from "@farcaster/miniapp-sdk";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { USDC_ADDRESS } from "~/lib/constants";
 import {
+  fetchAppStats,
   fetchUserCards,
   fetchUserInfo,
   fetchUserReveals,
 } from "~/lib/userapis";
+import { usePathname, useRouter } from "next/navigation";
 
 const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
+  const pathname = usePathname();
   const [state, dispatch] = useContext(AppContext);
-  const [loading, setLoading] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
+  const [loading, setLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [numBuyCards, setNumBuyCards] = useState(1);
   const [buyingCards, setBuyingCards] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
-  const [userInfoModal, setUserInfoModal] = useState(false);
   const readyCalled = useRef(false);
+  const {push} = useRouter();
 
   const refreshCards = async () => {
     try {
@@ -57,9 +59,10 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         fetchUserCards(userWallet),
         fetchUserInfo(userWallet),
         fetchUserReveals(userWallet),
+        fetchAppStats(),
       ];
 
-      const [userCards, userInfo, userReveals] = await Promise.allSettled(
+      const [userCards, userInfo, userReveals, appStats] = await Promise.allSettled(
         promises
       );
 
@@ -69,6 +72,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         dispatch({ type: SET_USER, payload: userInfo.value });
       if (userReveals.status === "fulfilled")
         dispatch({ type: SET_USER_REVEALS, payload: userReveals.value });
+      if (appStats.status === "fulfilled")
+        dispatch({ type: SET_APP_STATS, payload: appStats.value });
       callReady();
     } catch (error) {
       console.error("Error in fetching user info", error);
@@ -163,58 +168,20 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  const openModal = (modalType: "history" | "info" | "buy" | "userInfo") => {
+  const openModal = (modalType: "buy") => {
     // Close all modals first
-    setShowHistory(false);
-    setShowInfo(false);
     setShowBuyModal(false);
-    setUserInfoModal(false);
 
     // Then open the requested modal
     switch (modalType) {
-      case "history":
-        setShowHistory(true);
-        break;
-      case "info":
-        setShowInfo(true);
-        break;
       case "buy":
         setShowBuyModal(true);
-        break;
-      case "userInfo":
-        setUserInfoModal(true);
         break;
     }
   };
 
   const handleCloseModal = () => {
     dispatch({ type: "SET_SELECTED_CARD", payload: null });
-  };
-
-  // Helper function to format date properly
-  const formatDate = (dateString: string) => {
-    try {
-      // Parse the UTC timestamp and convert to local timezone
-      const date = new Date(dateString + "Z"); // Add 'Z' to indicate UTC
-
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-
-      // Format in user's local timezone
-      return date.toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Invalid date";
-    }
   };
 
   useEffect(() => {
@@ -272,7 +239,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
           {!state.selectedCard ? (
             <motion.button
               className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-              onClick={() => openModal("history")}
+              onClick={() => push("/profile")}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{
                 opacity: loading ? 0 : 1,
@@ -325,7 +292,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
           )}
           <motion.button
             className="px-6 border border-white/10 rounded-[48px] h-[42px] flex items-center justify-center gap-2"
-            onClick={() => openModal("userInfo")}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: loading ? 0 : 1,
@@ -338,15 +304,15 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
             }}
           >
             <span className="text-[16px] leading-[90%] font-medium text-white/40">
-              Won
+              Winnings
             </span>
             <span className="text-[16px] leading-[90%] font-medium text-white">
-              ${state?.user?.amount_won || 0}
+              ${state?.appStats?.winnings || state?.user?.amount_won || 0}
             </span>
           </motion.button>
           <motion.button
             className="p-2 rounded-full bg-white/10 cursor-pointer hover:bg-white/20 transition-colors"
-            onClick={() => openModal("info")}
+            onClick={() => push("/leaderboard")}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: loading ? 0 : 1,
@@ -402,6 +368,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
               if (state.selectedCard) {
                 dispatch({ type: SET_SELECTED_CARD, payload: null });
               }
+              if (pathname !== "/") push("/");
             }}
           >
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
@@ -437,118 +404,9 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         </motion.div>
 
         <AnimatePresence>
-          {showHistory && (
-            <motion.div
-              className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                duration: 0.3,
-              }}
-            >
-              <div className="relative space-y-6">
-                <div className="flex justify-between items-center">
-                  <p className="text-[18px] leading-[90%] text-white font-semibold">
-                    History
-                  </p>
-                  <button
-                    className="absolute top-[-16px] right-[-16px] p-2 rounded-full bg-white/[0.09] cursor-pointer"
-                    onClick={() => setShowHistory(false)}
-                  >
-                    <Image
-                      src={"/assets/cross-icon.svg"}
-                      alt="cross-icon"
-                      width={18}
-                      height={18}
-                      unoptimized
-                      priority
-                    />
-                  </button>
-                </div>
-                <hr className="border-[0.5px] border-white/10" />
-                {state.userReveals.length
-                  ? state.userReveals.map((ur) => (
-                      <div
-                        key={ur.id}
-                        className="flex justify-between items-center"
-                      >
-                        <p
-                          className={`text-[14px] font-medium leading-[90%] ${
-                            ur.prize_amount === 0
-                              ? "text-[#fff]/60"
-                              : "text-[#fff]"
-                          }`}
-                        >
-                          {ur.prize_amount === 0
-                            ? "No win! :("
-                            : `Won $${ur.prize_amount}!`}
-                        </p>
-                        <p className="text-[14px] font-medium leading-[90%] text-[#fff]/60">
-                          {formatDate(ur.created_at)}
-                        </p>
-                      </div>
-                    ))
-                  : null}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {showInfo && (
-            <motion.div
-              className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                duration: 0.3,
-              }}
-            >
-              <div className="relative space-y-6">
-                <div className="flex justify-between items-center">
-                  <p className="text-[18px] leading-[90%] text-white font-semibold">
-                    Info
-                  </p>
-                  <button
-                    className="absolute top-[-16px] right-[-16px] p-2 rounded-full bg-white/[0.09] cursor-pointer"
-                    onClick={() => setShowInfo(false)}
-                  >
-                    <Image
-                      src={"/assets/cross-icon.svg"}
-                      alt="cross-icon"
-                      width={18}
-                      height={18}
-                      unoptimized
-                      priority
-                    />
-                  </button>
-                </div>
-                <p className="text-[18px] leading-[130%] text-white font-semibold">
-                  We&apos;re transforming the crypto experience into something
-                  everyone can enjoy, starting with the simple joy of scratch
-                  cards - a game that billions already know and love
-                </p>
-                <hr className="border-[0.5px] border-white/10" />
-                <p className="text-[15px] leading-[120%] text-white font-medium">
-                  We&apos;re transforming the crypto experience into something
-                  everyone can enjoy, starting with the simple joy of scratch
-                  cards - a game that billions already know and love
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
           {showBuyModal && (
             <motion.div
-              className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
+              className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] max-w-[400px] rounded-[24px] p-6 z-[54]"
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -640,106 +498,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
                     <>Buy Card{numBuyCards > 1 ? "s" : ""}</>
                   )}
                 </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {userInfoModal && (
-            <motion.div
-              className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] rounded-[24px] p-6 z-[54]"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                duration: 0.3,
-              }}
-            >
-              <div className="relative space-y-6">
-                <div className="flex justify-between items-center">
-                  <p className="text-[18px] leading-[90%] text-white font-semibold">
-                    User Info
-                  </p>
-                  <button
-                    className="absolute top-[-16px] right-[-16px] p-2 rounded-full bg-white/[0.09] cursor-pointer"
-                    onClick={() => setUserInfoModal(false)}
-                  >
-                    <Image
-                      src={"/assets/cross-icon.svg"}
-                      alt="cross-icon"
-                      width={18}
-                      height={18}
-                      unoptimized
-                      priority
-                    />
-                  </button>
-                </div>
-                <hr className="border-[0.5px] border-white/10" />
-                <div className="flex justify-between items-center">
-                  <p
-                    className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
-                  >
-                    Won
-                  </p>
-                  <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
-                    {state?.user?.amount_won ? (
-                      `$${state?.user?.amount_won}`
-                    ) : (
-                      <>&mdash;</>
-                    )}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p
-                    className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
-                  >
-                    Total Cards
-                  </p>
-                  <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
-                    {state?.user?.cards_count || <>&mdash;</>}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p
-                    className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
-                  >
-                    Total Reveals
-                  </p>
-                  <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
-                    {state?.user?.total_reveals || <>&mdash;</>}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p
-                    className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
-                  >
-                    Total Wins
-                  </p>
-                  <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
-                    {state?.user?.total_wins || <>&mdash;</>}
-                  </p>
-                </div>
-                <div className="flex justify-between items-center">
-                  <p
-                    className={`text-[14px] font-medium leading-[90%] text-[#fff]/60`}
-                  >
-                    Win Rate
-                  </p>
-                  <p className="text-[14px] font-medium leading-[90%] text-[#fff]">
-                    {state?.user?.total_reveals && state?.user?.total_wins ? (
-                      `${(
-                        Number(
-                          state.user.total_wins / state.user.total_reveals
-                        ) * 100
-                      ).toFixed(2)}%`
-                    ) : (
-                      <>&mdash;</>
-                    )}
-                  </p>
-                </div>
               </div>
             </motion.div>
           )}

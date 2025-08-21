@@ -50,3 +50,15 @@ export const fetchUserCards = async (userWallet: string) => {
     return []; // Return empty array instead of throwing
   }
 };
+
+// Fetch app stats
+export const fetchAppStats = async () => {
+  try {
+    const response = await fetch(`/api/stats`);
+    const data = await response.json();
+    return data.stats;
+  } catch (error) {
+    console.error("Failed to fetch app stats:", error);
+    return {};
+  }
+};
