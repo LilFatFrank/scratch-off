@@ -223,6 +223,8 @@ export default function ScratchOff({
                     cardId: cardData.id,
                     userWallet: cardData.user_wallet,
                     prizeAmount: data.prizeAmount,
+                    username: state.user?.username,
+                    pfp: state.user?.pfp,
                   }),
                 })
                   .then((response) => response.json())
