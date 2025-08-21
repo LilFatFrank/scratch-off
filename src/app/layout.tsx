@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     icon: [
       {
         rel: "icon",
-        url: "/assets/scratch-card-image.png",
+        url: "/assets/splash-image.jpg",
         sizes: "any",
-        type: "image/png",
+        type: "image/jpg",
       },
     ],
   },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     "fc:frame": JSON.stringify({
       version: "next",
       imageUrl:
-        "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
+        "https://scratch-off-xi.vercel.app/assets/splash-image.jpg",
       button: {
         title: "Scratch Off",
         action: {
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
           name: "Scratch Off",
           url: "https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off",
           splashImageUrl:
-            "https://scratch-off-xi.vercel.app/assets/scratch-card-image.png",
+            "https://scratch-off-xi.vercel.app/assets/splash-image.jpg",
         },
       },
     }),
