@@ -70,6 +70,13 @@ const LeaderboardPage = () => {
       type: SET_APP_BACKGROUND,
       payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.LEADERBOARD})`,
     });
+
+    return () => {
+      dispatch({
+        type: SET_APP_BACKGROUND,
+        payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.DEFAULT})`,
+      });
+    };
   }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

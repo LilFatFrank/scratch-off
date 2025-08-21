@@ -70,13 +70,6 @@ export default function Home() {
     dispatch({ type: SET_SELECTED_CARD, payload: card });
   };
 
-  useEffect(() => {
-    dispatch({
-      type: SET_APP_BACKGROUND,
-      payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.DEFAULT})`,
-    });
-  }, []);
-
   return (
     <AnimatePresence mode="wait">
       {!state.selectedCard && state.cards.length ? (
