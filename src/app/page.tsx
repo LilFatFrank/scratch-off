@@ -1,8 +1,7 @@
 "use client";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { AppContext } from "./context";
 import {
-  SET_APP_BACKGROUND,
   SET_APP_STATS,
   SET_CARDS,
   SET_SELECTED_CARD,
@@ -19,7 +18,6 @@ import {
   fetchUserInfo,
   fetchUserReveals,
 } from "~/lib/userapis";
-import { APP_COLORS } from "~/lib/constants";
 
 export default function Home() {
   const [state, dispatch] = useContext(AppContext);
