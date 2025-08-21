@@ -72,8 +72,8 @@ const LeaderboardPage = () => {
     });
   }, []);
 
-  // @ts-ignore
-  const handleDragEnd = async (event: any, info: PanInfo) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDragEnd = async (_event: any, info: PanInfo) => {
     const swipeThreshold = 50;
     const { offset, velocity } = info;
 
