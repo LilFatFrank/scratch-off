@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch top 100 users sorted by amount_won descending
     const { data: users, error } = await supabaseAdmin

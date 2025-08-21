@@ -94,7 +94,7 @@ const ProfilePage = () => {
               ease: "easeInOut"
             }}
           >
-            {(state.user?.amount_won || 0).toLocaleString("en-US", {
+            {(displayAmount || 0).toLocaleString("en-US", {
               style: "currency",
               currency: "USD",
               minimumFractionDigits: 0,

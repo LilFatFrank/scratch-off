@@ -72,6 +72,7 @@ const LeaderboardPage = () => {
     });
   }, []);
 
+  // @ts-ignore
   const handleDragEnd = async (event: any, info: PanInfo) => {
     const swipeThreshold = 50;
     const { offset, velocity } = info;
