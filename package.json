@@ -45,6 +45,7 @@
     "next-auth": "^4.24.11",
     "react": "^19",
     "react-dom": "^19",
+    "react-virtuoso": "^4.14.0",
     "scratchcard-js": "^1.5.5",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",

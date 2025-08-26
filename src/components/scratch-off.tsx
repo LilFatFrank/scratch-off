@@ -47,7 +47,7 @@ export default function ScratchOff({
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [shareButtonText, setShareButtonText] = useState("Share Win");
 
-  const { actions } = useMiniApp();
+  const { actions, haptics } = useMiniApp();
 
   // Mouse handlers for card tilt
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -173,75 +173,70 @@ export default function ScratchOff({
       if (percent > 40 && !scratched && !isProcessing) {
         setIsProcessing(true);
 
-        // Call reveal API to get prize amount
-        fetch("/api/cards/reveal", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cardId: cardData?.id }),
-        })
-          .then((response) => response.json())
-          .then(async (data) => {
-            if (data.success) {
-              setPrizeAmount(data.prizeAmount);
-              setShowBlurOrverlay(data.prizeAmount > 0);
-              if (data.prizeAmount > 0) {
-                dispatch({
-                  type: SET_APP_COLOR,
-                  payload: APP_COLORS.WON,
-                });
-                dispatch({
-                  type: SET_APP_BACKGROUND,
-                  payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.WON})`,
-                });
-                await fetch('/api/neynar/send-notification', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    fid: state.user?.fid,
-                    username: state.user?.username,
-                    amount: data.prizeAmount
-                  })
-                });
-              } else {
-                dispatch({
-                  type: SET_APP_COLOR,
-                  payload: APP_COLORS.LOST,
-                });
-                dispatch({
-                  type: SET_APP_BACKGROUND,
-                  payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.LOST})`,
-                });
-              }
-              setScratched(true);
-
-              // Process prize immediately with the API response
-              if (cardData?.id) {
-                fetch("/api/cards/process-prize", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    cardId: cardData.id,
-                    userWallet: cardData.user_wallet,
-                    prizeAmount: data.prizeAmount,
-                    username: state.user?.username,
-                    pfp: state.user?.pfp,
-                  }),
-                })
-                  .then((response) => response.json())
-                  .then((processData) => {
-                    if (processData.success) {
-                      onPrizeRevealed?.(data.prizeAmount);
-                    }
-                  })
-                  .catch((error) => {
-                    console.error("Failed to process prize:", error);
-                  });
-              }
-            }
-          })
-          .catch((error) => {
-            console.error("Failed to reveal prize:", error);
+        // Use prize amount from card data directly
+        const prizeAmount = cardData?.prize_amount || 0;
+        setPrizeAmount(prizeAmount);
+        setShowBlurOrverlay(prizeAmount > 0);
+        
+        if (prizeAmount > 0) {
+          dispatch({
+            type: SET_APP_COLOR,
+            payload: APP_COLORS.WON,
           });
+          dispatch({
+            type: SET_APP_BACKGROUND,
+            payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.WON})`,
+          });
+          haptics.impactOccurred('heavy');
+          haptics.notificationOccurred('success');
+          // Play win sound
+          state.playWinSound?.();
+          fetch('/api/neynar/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fid: state.user?.fid,
+              username: state.user?.username,
+              amount: prizeAmount
+            })
+          }).catch(error => {
+            console.error("Failed to send notification:", error);
+          });
+        } else {
+          dispatch({
+            type: SET_APP_COLOR,
+            payload: APP_COLORS.LOST,
+          });
+          dispatch({
+            type: SET_APP_BACKGROUND,
+            payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.LOST})`,
+          });
+        }
+        setScratched(true);
+
+        // Process prize immediately
+        if (cardData?.id) {
+          fetch("/api/cards/process-prize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cardId: cardData.id,
+              userWallet: cardData.user_wallet,
+              prizeAmount: prizeAmount,
+              username: state.user?.username,
+              pfp: state.user?.pfp,
+            }),
+          })
+            .then((response) => response.json())
+            .then((processData) => {
+              if (processData.success) {
+                onPrizeRevealed?.(prizeAmount);
+              }
+            })
+            .catch((error) => {
+              console.error("Failed to process prize:", error);
+            });
+        }
       }
     };
 
@@ -426,7 +421,7 @@ export default function ScratchOff({
               ${prizeAmount}!
             </span>
           </p>
-          <div className="absolute w-[90%] bottom-[24px]">
+          <div className="absolute w-[90%] bottom-[48px]">
             <button 
               onClick={handleShare}
               className="w-full py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px] hover:bg-white/10 transition-colors"

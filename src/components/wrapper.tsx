@@ -6,20 +6,25 @@ import Image from "next/image";
 import {
   SET_APP_STATS,
   SET_CARDS,
+  SET_LEADERBOARD,
   SET_SELECTED_CARD,
   SET_USER,
-  SET_USER_REVEALS,
+  SET_ACTIVITY,
+  SET_PLAY_WIN_SOUND,
 } from "~/app/context/actions";
 import sdk from "@farcaster/miniapp-sdk";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { USDC_ADDRESS } from "~/lib/constants";
 import {
+  fetchActivity,
   fetchAppStats,
+  fetchLeaderboard,
   fetchUserCards,
   fetchUserInfo,
-  fetchUserReveals,
 } from "~/lib/userapis";
 import { usePathname, useRouter } from "next/navigation";
+import { subscribeToTable } from "~/lib/supabase";
+import { useMiniApp } from "@neynar/react";
 
 const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
@@ -30,7 +35,54 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const [buyingCards, setBuyingCards] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const readyCalled = useRef(false);
-  const {push} = useRouter();
+  const currentCardsRef = useRef(state.cards);
+  const currentLeaderboardRef = useRef(state.leaderboard);
+  const currentActivityRef = useRef(state.activity);
+  const { push } = useRouter();
+
+  const { haptics } = useMiniApp();
+
+  // Audio for win sounds - load once and reuse
+  const winAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      winAudioRef.current = new Audio('/assets/win.mp3');
+      winAudioRef.current.preload = 'auto';
+      winAudioRef.current.volume = 0.7; // Set volume to 70%
+    }
+  }, []);
+
+  // Function to play win sound
+  const playWinSound = () => {
+    if (winAudioRef.current) {
+      winAudioRef.current.currentTime = 0; // Reset to beginning
+      winAudioRef.current.play().catch(error => {
+        console.log('Audio play failed:', error);
+      });
+    }
+  };
+
+  // Set playWinSound function in context
+  useEffect(() => {
+    dispatch({ type: SET_PLAY_WIN_SOUND, payload: playWinSound });
+  }, []);
+
+  // Keep ref updated with current cards
+  useEffect(() => {
+    currentCardsRef.current = state.cards;
+  }, [state.cards]);
+
+  // Keep ref updated with current leaderboard
+  useEffect(() => {
+    currentLeaderboardRef.current = state.leaderboard;
+  }, [state.leaderboard]);
+
+  // Keep ref updated with current activity
+  useEffect(() => {
+    currentActivityRef.current = state.activity;
+  }, [state.activity]);
 
   const refreshCards = async () => {
     try {
@@ -58,22 +110,24 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       const promises = [
         fetchUserCards(userWallet),
         fetchUserInfo(userWallet),
-        fetchUserReveals(userWallet),
         fetchAppStats(),
+        fetchLeaderboard(),
+        fetchActivity(),
       ];
 
-      const [userCards, userInfo, userReveals, appStats] = await Promise.allSettled(
-        promises
-      );
+      const [userCards, userInfo, appStats, leaderboard, activity] =
+        await Promise.allSettled(promises);
 
       if (userCards.status === "fulfilled")
         dispatch({ type: SET_CARDS, payload: userCards.value });
       if (userInfo.status === "fulfilled")
         dispatch({ type: SET_USER, payload: userInfo.value });
-      if (userReveals.status === "fulfilled")
-        dispatch({ type: SET_USER_REVEALS, payload: userReveals.value });
       if (appStats.status === "fulfilled")
         dispatch({ type: SET_APP_STATS, payload: appStats.value });
+      if (leaderboard.status === "fulfilled")
+        dispatch({ type: SET_LEADERBOARD, payload: leaderboard.value });
+      if (activity.status === "fulfilled")
+        dispatch({ type: SET_ACTIVITY, payload: activity.value });
       callReady();
     } catch (error) {
       console.error("Error in fetching user info", error);
@@ -97,6 +151,139 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (state.publicKey) {
       fetchAllData(state.publicKey);
+    }
+  }, [state.publicKey]);
+
+  // Setup real-time subscriptions
+  useEffect(() => {
+    if (state.publicKey) {
+      console.log("Setting up subscriptions for wallet:", state.publicKey);
+      
+      // Store subscription references for cleanup
+      const subscriptions: any[] = [];
+      
+      // Subscribe to cards table
+      const cardsSub = subscribeToTable(
+        "cards",
+        (payload) => {
+          console.log("🎯 Cards subscription triggered:", payload);
+          
+          // Only handle cards for the current user
+          if (payload.new && payload.new.user_wallet === state.publicKey) {
+            if (payload.eventType === "INSERT") {
+              // Scenario 1: New card is added
+              console.log("📦 New card added:", payload.new);
+              dispatch({
+                type: SET_CARDS,
+                payload: [payload.new, ...currentCardsRef.current],
+              });
+            } else if (payload.eventType === "UPDATE") {
+              // Scenario 2: Card is updated (revealed)
+              console.log("🎁 Card revealed:", payload.new);
+              const updatedCards = currentCardsRef.current.map((card) =>
+                card.id === payload.new.id ? payload.new : card
+              );
+              dispatch({ type: SET_CARDS, payload: updatedCards });
+            }
+          }
+        },
+        state.publicKey
+      );
+      subscriptions.push(cardsSub);
+
+      // Subscribe to users table
+      const usersSub = subscribeToTable(
+        "users",
+        (payload) => {
+          console.log("🎯 Users subscription triggered:", payload);
+          
+          // Handle local user updates
+          if (payload.new && payload.new.wallet === state.publicKey) {
+            if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+              console.log("👤 Local user updated:", payload.new);
+              dispatch({ type: SET_USER, payload: payload.new });
+            }
+          }
+
+          // Handle leaderboard updates for any user change
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            console.log("🏆 Updating leaderboard with user:", payload.new);
+            
+            // Update leaderboard by replacing the user or adding new user
+            const updatedLeaderboard = currentLeaderboardRef.current.map((user) => {
+              if (user.wallet === payload.new.wallet) {
+                return payload.new;
+              }
+              return user;
+            });
+
+            // If it's a new user, add them to the leaderboard
+            if (payload.eventType === "INSERT") {
+              const userExists = updatedLeaderboard.some(
+                (user) => user.wallet === payload.new.wallet
+              );
+              if (!userExists) {
+                updatedLeaderboard.push(payload.new);
+              }
+            }
+
+            // Sort by amount_won descending
+            updatedLeaderboard.sort(
+              (a, b) => (b.amount_won || 0) - (a.amount_won || 0)
+            );
+
+            console.log("🏆 Updated leaderboard:", updatedLeaderboard);
+            dispatch({ type: SET_LEADERBOARD, payload: updatedLeaderboard });
+          }
+        }
+        // No userWallet filter - listen to ALL user changes for leaderboard
+      );
+      subscriptions.push(usersSub);
+
+      // Subscribe to reveals table (activity)
+      const revealsSub = subscribeToTable(
+        "reveals",
+        (payload) => {
+          console.log("🎯 Reveals subscription triggered:", payload);
+          
+          if (payload.eventType === "INSERT") {
+            // New reveal - add to beginning of activity list
+            console.log("🎉 New reveal added to activity:", payload.new);
+            dispatch({
+              type: SET_ACTIVITY,
+              payload: [payload.new, ...currentActivityRef.current],
+            });
+          }
+        }
+        // No userWallet filter - listen to ALL reveals for global activity
+      );
+      subscriptions.push(revealsSub);
+
+      // Subscribe to stats table
+      const statsSub = subscribeToTable(
+        "stats",
+        (payload) => {
+          console.log("🎯 Stats subscription triggered:", payload);
+          
+          if (payload.eventType === "UPDATE") {
+            // Stats updated - replace current stats
+            console.log("📊 Stats updated:", payload.new);
+            dispatch({ type: SET_APP_STATS, payload: payload.new });
+          }
+        }
+        // No userWallet filter - listen to global stats changes
+      );
+      subscriptions.push(statsSub);
+
+      // Cleanup function
+      return () => {
+        console.log("🧹 Cleaning up subscriptions");
+        subscriptions.forEach(sub => {
+          if (sub && typeof sub.unsubscribe === 'function') {
+            sub.unsubscribe();
+          }
+        });
+      };
     }
   }, [state.publicKey]);
 
@@ -154,6 +341,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await backendResponse.json();
+      haptics.impactOccurred('medium');
+      haptics.notificationOccurred('success');
       refreshCards();
       setShowBuyModal(false);
     } catch (error) {

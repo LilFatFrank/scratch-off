@@ -1,5 +1,5 @@
 import { Action } from "./action";
-import { SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER, SET_USER_REVEALS } from "./actions";
+import { SET_ACTIVITY, SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_LEADERBOARD, SET_PLAY_WIN_SOUND, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER } from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -44,15 +44,25 @@ const reducer = (state: AppState, action: Action): AppState => {
         ...state,
         cards: action.payload
       }
-    case SET_USER_REVEALS:
+    case SET_LEADERBOARD:
       return {
         ...state,
-        userReveals: action.payload
+        leaderboard: action.payload
+      }
+    case SET_ACTIVITY:
+      return {
+        ...state,
+        activity: action.payload
       }
     case SET_APP_STATS:
       return {
         ...state,
         appStats: action.payload
+      }
+    case SET_PLAY_WIN_SOUND:
+      return {
+        ...state,
+        playWinSound: action.payload
       }
     default:
       return state;

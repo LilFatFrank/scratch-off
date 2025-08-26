@@ -15,6 +15,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'tba-mobile.mypinata.cloud',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

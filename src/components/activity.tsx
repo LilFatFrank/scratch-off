@@ -1,96 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-
-interface Reveal {
-  id: string;
-  user_wallet: string;
-  prize_amount: number;
-  created_at: string;
-  updated_at: string;
-  username: string;
-  pfp: string;
-}
-
-const ActivitySkeleton = () => {
-  return (
-    <div className="w-full pt-8 h-full overflow-y-auto">
-      <div className="space-y-4">
-        {[...Array(8)].map((_, index) => (
-          <motion.div
-            key={index}
-            className="flex items-center justify-between w-full"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <div className="flex items-center gap-3">
-              {/* Profile Picture Skeleton */}
-              <motion.div
-                className="w-12 h-12 rounded-full bg-white/10"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              <div className="space-y-2">
-                {/* Prize Text Skeleton */}
-                <motion.div
-                  className="h-4 w-24 bg-white/10 rounded"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
-                />
-                {/* Username Skeleton */}
-                <motion.div
-                  className="h-3 w-20 bg-white/10 rounded"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1.5, repeat: Infinity, delay: 0.4 }}
-                />
-              </div>
-            </div>
-            {/* Time Skeleton */}
-            <motion.div
-              className="h-3 w-16 bg-white/10 rounded"
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
-            />
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-};
+import { AppContext } from "~/app/context";
 
 const Activity = () => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [reveals, setReveals] = useState<Reveal[]>([]);
-
-  useEffect(() => {
-    const fetchActivity = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/users/reveals");
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || "Failed to fetch activity");
-        }
-
-        setReveals(data.reveals || []);
-      } catch (err) {
-        console.error("Error fetching activity:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch activity"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActivity();
-  }, []);
+  const [state] = useContext(AppContext);
 
   // Helper function to format date properly (from wrapper.tsx)
   const formatDate = (dateString: string) => {
@@ -152,17 +67,12 @@ const Activity = () => {
     return username.length > 15 ? username.substring(0, 15) + "..." : username;
   };
 
-  if (loading) {
-    return <ActivitySkeleton />;
-  }
-
-  if (error) {
+  if (state.activity.length === 0) {
     return (
       <div className="w-full pt-8 h-full overflow-y-auto">
         <div className="flex items-center justify-center h-64">
           <div className="text-white/60 text-center">
-            <p>Error loading activity</p>
-            <p className="text-sm text-white/60 mt-2">{error}</p>
+            <p>Could not load activity</p>
           </div>
         </div>
       </div>
@@ -171,13 +81,13 @@ const Activity = () => {
 
   return (
     <div className="w-full pt-8 h-full overflow-y-auto">
-      <motion.div 
+      <motion.div
         className="space-y-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {reveals.map((reveal, index) => (
+        {state.activity.map((reveal, index) => (
           <motion.div
             key={reveal.id}
             className="flex items-center justify-between w-full"
@@ -219,8 +129,8 @@ const Activity = () => {
           </motion.div>
         ))}
 
-        {reveals.length === 0 && (
-          <motion.div 
+        {state.activity.length === 0 && (
+          <motion.div
             className="flex items-center justify-center h-64"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}

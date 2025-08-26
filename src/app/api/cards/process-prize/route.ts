@@ -17,11 +17,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update card with prize amount and scratched status
+    // Update card with scratched status (prize_amount is already set)
     const { data: updatedCard, error: updateError } = await supabaseAdmin
       .from('cards')
       .update({
-        prize_amount: prizeAmount,
         scratched: true,
         scratched_at: new Date().toISOString()
       })

@@ -2,27 +2,25 @@
 import { useContext } from "react";
 import { AppContext } from "./context";
 import {
-  SET_APP_STATS,
-  SET_CARDS,
   SET_SELECTED_CARD,
-  SET_USER,
-  SET_USER_REVEALS,
 } from "./context/actions";
 import ScratchOff from "~/components/scratch-off";
 import CardGrid from "~/components/card-grid";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./interface/card";
-import {
+/* import {
   fetchAppStats,
   fetchUserCards,
   fetchUserInfo,
   fetchUserReveals,
-} from "~/lib/userapis";
+  fetchActivity,
+  fetchLeaderboard,
+} from "~/lib/userapis"; */
 
 export default function Home() {
   const [state, dispatch] = useContext(AppContext);
 
-  // Function to refresh cards (can be called after buying new cards)
+ /*  // Function to refresh cards (can be called after buying new cards)
   const refreshCards = async () => {
     try {
       const cards = await fetchUserCards(state.publicKey);
@@ -64,6 +62,24 @@ export default function Home() {
     }
   };
 
+  const refreshActivity = async () => {
+    try {
+      const activity = await fetchActivity();
+      dispatch({ type: SET_ACTIVITY, payload: activity });
+    } catch (e) {
+      console.log("error refreshing activity", e);
+    }
+  };
+
+  const refreshLeaderboard = async () => {
+    try {
+      const leaderboard = await fetchLeaderboard();
+      dispatch({ type: SET_LEADERBOARD, payload: leaderboard });
+    } catch (e) {
+      console.log("error refreshing leaderboard", e);
+    }
+  }; */
+
   const handleCardSelect = (card: Card) => {
     dispatch({ type: SET_SELECTED_CARD, payload: card });
   };
@@ -92,10 +108,12 @@ export default function Home() {
             cardData={state.selectedCard}
             isDetailView={true}
             onPrizeRevealed={() => {
-              refreshUserInfo();
+              /* refreshUserInfo();
               refreshReveals();
               refreshCards();
               refreshAppStats();
+              refreshActivity();
+              refreshLeaderboard(); */
             }}
           />
         </motion.div>

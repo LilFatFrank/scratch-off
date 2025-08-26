@@ -3,6 +3,7 @@ import { createPublicClient, http } from "viem";
 import { base } from "wagmi/chains";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
 import { USDC_ADDRESS } from "~/lib/constants";
+import { drawPrize } from "~/lib/drawPrize";
 
 // Payment verification function for Base chain with retry logic
 async function verifyPayment(
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
       cardsToCreate.push({
         user_wallet: userWallet,
         payment_tx: paymentTx,
-        prize_amount: 0, // Will be set when card is scratched
+        prize_amount: drawPrize(),
         scratched: false,
         claimed: false,
         created_at: new Date().toISOString(),

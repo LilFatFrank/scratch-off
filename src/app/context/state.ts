@@ -1,6 +1,7 @@
 import { User } from "../interface/user";
 import { Card } from "../interface/card";
 import { AppStats } from "../interface/appStats";
+import { Reveal } from "../interface/reveal";
 
 export interface AppState {
   appBackground: string;
@@ -11,9 +12,10 @@ export interface AppState {
   isInMiniApp: boolean;
   selectedCard: Card | null;
   cards: Card[] | [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  userReveals: any[] | [];
   appStats: AppStats | null;
+  leaderboard: User[] | [];
+  activity: Reveal[] | [];
+  playWinSound: (() => void) | null;
 }
 
 const initialState: AppState = {
@@ -25,8 +27,10 @@ const initialState: AppState = {
   isInMiniApp: false,
   selectedCard: null, 
   cards: [],
-  userReveals: [],
-  appStats: null,
+  appStats: null, 
+  leaderboard: [],
+  activity: [],
+  playWinSound: null,
 };
 
 export default initialState;
