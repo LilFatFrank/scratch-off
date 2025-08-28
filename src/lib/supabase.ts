@@ -7,6 +7,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const subscribeToTable = (
   table: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   callback: (payload: any) => void,
   userWallet?: string
 ) => {

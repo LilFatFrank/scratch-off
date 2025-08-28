@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
+import { getRevealsToNextLevel } from "~/lib/level";
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +33,8 @@ export async function POST(request: NextRequest) {
           amount_won: 0,
           cards_count: 0,
           last_active: new Date().toISOString(),
+          current_level: 1,
+          reveals_to_next_level: getRevealsToNextLevel(1),
         })
         .select()
         .single();

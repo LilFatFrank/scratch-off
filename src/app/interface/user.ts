@@ -11,4 +11,6 @@ export interface User {
     notification_enabled?: boolean,
     notification_token?: string | null,
     pfp: string,
+    current_level: number,
+    reveals_to_next_level: number,
 }

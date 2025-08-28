@@ -25,6 +25,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { subscribeToTable } from "~/lib/supabase";
 import { useMiniApp } from "@neynar/react";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
@@ -159,8 +160,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
     if (state.publicKey) {
       console.log("Setting up subscriptions for wallet:", state.publicKey);
       
-      // Store subscription references for cleanup
-      const subscriptions: any[] = [];
+      const subscriptions: RealtimeChannel[] = [];
       
       // Subscribe to cards table
       const cardsSub = subscribeToTable(
