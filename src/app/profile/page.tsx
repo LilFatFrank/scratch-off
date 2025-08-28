@@ -4,7 +4,6 @@ import { useContext, useEffect, useState } from "react";
 import CardGrid from "~/components/card-grid";
 import { useRouter } from "next/navigation";
 import { motion, useAnimation } from "framer-motion";
-import Image from "next/image";
 
 // Level calculation function
 function getLevelRequirement(level: number): number {
