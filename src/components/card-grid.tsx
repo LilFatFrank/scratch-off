@@ -3,22 +3,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { chunk3, findWinningRow } from "~/lib/winningRow";
 import { formatCell } from "~/lib/formatCell";
-import { CardCell } from "~/app/interface/cardCell";
-
-interface Card {
-  id: string;
-  user_wallet: string;
-  payment_tx: string;
-  prize_amount: number;
-  scratched_at?: string;
-  claimed: boolean;
-  payout_tx?: string;
-  created_at: string;
-  scratched: boolean;
-  card_no: number;
-  numbers_json?: CardCell[];
-  prize_asset_contract?: string;
-}
+import { Card } from "~/app/interface/card";
 
 interface CardGridProps {
   cards: Card[];
