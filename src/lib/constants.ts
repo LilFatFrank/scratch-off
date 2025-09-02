@@ -162,3 +162,19 @@ export const APP_COLORS = {
   ERROR: "#8E3033",
   LEADERBOARD: "#3B2B06",
 };
+
+export const PRIZE_ASSETS = [
+  USDC_ADDRESS,
+  // '0xUSDT...', '0xDAI...'
+] as const;
+
+export type TokenMeta = { symbol: string; decimals: number };
+
+export const TOKENS: Record<string, TokenMeta> = {
+  [USDC_ADDRESS.toLowerCase()]: { symbol: 'USDC', decimals: 6 },
+  // add new tokens’ decimals here
+};
+
+export function tokenMeta(addr: string): TokenMeta {
+  return TOKENS[addr.toLowerCase()] ?? { symbol: '???', decimals: 6 };
+}

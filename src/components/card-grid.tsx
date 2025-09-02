@@ -1,6 +1,8 @@
 "use client";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { chunk3, findWinningRow } from "~/lib/winningRow";
+import { formatCell } from "~/lib/formatCell";
 
 interface Card {
   id: string;
@@ -13,6 +15,8 @@ interface Card {
   created_at: string;
   scratched: boolean;
   card_no: number;
+  numbers_json?: any[];
+  prize_asset_contract?: string;
 }
 
 interface CardGridProps {
@@ -22,7 +26,12 @@ interface CardGridProps {
   onViewAll?: () => void;
 }
 
-export default function CardGrid({ cards, onCardSelect, showViewAll = false, onViewAll }: CardGridProps) {
+export default function CardGrid({
+  cards,
+  onCardSelect,
+  showViewAll = false,
+  onViewAll,
+}: CardGridProps) {
   const displayCards = showViewAll ? cards.slice(0, 7) : cards;
   const hasMoreCards = showViewAll && cards.length > 7;
 
@@ -40,6 +49,9 @@ export default function CardGrid({ cards, onCardSelect, showViewAll = false, onV
               layout: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
             }}
             className="cursor-pointer h-fit relative"
+            style={{
+              opacity: card.scratched || card.prize_amount > 0 ? 1 : 0.35,
+            }}
             onClick={() => onCardSelect(card)}
           >
             <motion.div
@@ -48,8 +60,55 @@ export default function CardGrid({ cards, onCardSelect, showViewAll = false, onV
               className="relative"
             >
               {card.scratched ? (
-                <div className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 bg-black/10 rounded-lg z-20 flex items-center justify-center font-bold text-center ${card.prize_amount ? "text-white" : "text-[#5e5e5e]/80"}`}>
-                  {card.prize_amount ? `$${card.prize_amount}` : "No win!"}
+                <div
+                  className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 rounded-lg z-30 flex items-center justify-center font-bold text-center text-white`}
+                >
+                  {card.prize_amount ? `$${card.prize_amount}` : ""}
+                </div>
+              ) : null}
+              {card.scratched && card.numbers_json ? (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center rotate-[-4deg]">
+                  {(() => {
+                    const rows = chunk3(card.numbers_json);
+                    const winningRowIdx = findWinningRow(
+                      card.numbers_json,
+                      card.prize_amount,
+                      card.prize_asset_contract || ""
+                    );
+
+                    return (
+                      <div className="grid grid-rows-4 gap-[1px]">
+                        {rows.map((row, index) => {
+                          const isWinning = winningRowIdx === index;
+                          return (
+                            <div
+                              key={index}
+                              className="grid grid-cols-3 gap-[1px] rotate-1"
+                            >
+                              {row.map((cell, cellIndex) => (
+                                <p
+                                  key={`${cell.amount}-${cellIndex}`}
+                                  className={`w-[17.5px] h-[17.5px] rounded-[3px] font-[ABCGaisyr] font-bold text-[8px] leading-[90%] italic flex items-center justify-center ${
+                                    isWinning
+                                      ? "text-[#00A151]/20 bg-[#00A151]/10"
+                                      : "text-[#000]/10 bg-[#000]/5"
+                                  }`}
+                                  style={{
+                                    filter:
+                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.35))",
+                                    textShadow:
+                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.35), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
+                                  }}
+                                >
+                                  {formatCell(cell.amount, cell.asset_contract)}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : null}
               <div
@@ -87,7 +146,7 @@ export default function CardGrid({ cards, onCardSelect, showViewAll = false, onV
             </motion.div>
           </motion.div>
         ))}
-        
+
         {/* View All Overlay */}
         {hasMoreCards && (
           <motion.div
@@ -119,7 +178,7 @@ export default function CardGrid({ cards, onCardSelect, showViewAll = false, onV
                   zIndex: 0,
                 }}
               />
-              
+
               {/* Scratched card image */}
               <div
                 style={{
@@ -137,7 +196,7 @@ export default function CardGrid({ cards, onCardSelect, showViewAll = false, onV
                   className="opacity-60"
                 />
               </div>
-              
+
               {/* View All text overlay */}
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center rotate-[-4deg]">
                 <p className="text-white font-[ABCGaisyr] text-[14px] font-bold leading-[90%] mb-1 italic">

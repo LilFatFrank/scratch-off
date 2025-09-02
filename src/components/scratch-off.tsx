@@ -11,20 +11,9 @@ import {
   SCRATCH_RADIUS,
 } from "~/lib/constants";
 import { useMiniApp } from "@neynar/react";
-// import sdk from "@farcaster/miniapp-sdk";
-
-interface Card {
-  id: string;
-  user_wallet: string;
-  payment_tx: string;
-  prize_amount: number;
-  scratched_at?: string;
-  claimed: boolean;
-  payout_tx?: string;
-  created_at: string;
-  scratched: boolean;
-  card_no: number;
-}
+import { Card } from "~/app/interface/card";
+import { formatCell } from "~/lib/formatCell";
+import { chunk3, findWinningRow } from "~/lib/winningRow";
 
 interface ScratchOffProps {
   cardData: Card | null;
@@ -67,26 +56,29 @@ export default function ScratchOff({
     setTilt({ x: 0, y: 0 });
   };
 
+  console.log("cardData", cardData);
+
   const handleShare = async () => {
     if (!state.user) return;
-    
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://scratch-off-xi.vercel.app';
-    const frameUrl = `${baseUrl}/api/frame-share?` + new URLSearchParams({
-      prize: prizeAmount.toString(),
-      username: state.user.username || '',
-    }).toString();
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_URL || "https://scratch-off-xi.vercel.app";
+    const frameUrl =
+      `${baseUrl}/api/frame-share?` +
+      new URLSearchParams({
+        prize: prizeAmount.toString(),
+        username: state.user.username || "",
+      }).toString();
 
     try {
-
       await actions.composeCast({
         text: `I just won $${prizeAmount}!`,
         embeds: [frameUrl],
-      })
-      
+      });
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
       // Fallback: open in new tab
-      window.open(frameUrl, '_blank');
+      window.open(frameUrl, "_blank");
     }
   };
 
@@ -177,7 +169,7 @@ export default function ScratchOff({
         const prizeAmount = cardData?.prize_amount || 0;
         setPrizeAmount(prizeAmount);
         setShowBlurOrverlay(prizeAmount > 0);
-        
+
         if (prizeAmount > 0) {
           dispatch({
             type: SET_APP_COLOR,
@@ -187,19 +179,19 @@ export default function ScratchOff({
             type: SET_APP_BACKGROUND,
             payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.WON})`,
           });
-          haptics.impactOccurred('heavy');
-          haptics.notificationOccurred('success');
+          haptics.impactOccurred("heavy");
+          haptics.notificationOccurred("success");
           // Play win sound
           state.playWinSound?.();
-          fetch('/api/neynar/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          fetch("/api/neynar/send-notification", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               fid: state.user?.fid,
               username: state.user?.username,
-              amount: prizeAmount
-            })
-          }).catch(error => {
+              amount: prizeAmount,
+            }),
+          }).catch((error) => {
             console.error("Failed to send notification:", error);
           });
         } else {
@@ -222,13 +214,14 @@ export default function ScratchOff({
             body: JSON.stringify({
               cardId: cardData.id,
               userWallet: cardData.user_wallet,
-              prizeAmount: prizeAmount,
               username: state.user?.username,
               pfp: state.user?.pfp,
             }),
           })
             .then((response) => response.json())
             .then((processData) => {
+              const pa = Number(processData.prizeAmount || 0);
+              setPrizeAmount(pa);
               if (processData.success) {
                 onPrizeRevealed?.(prizeAmount);
               }
@@ -281,12 +274,12 @@ export default function ScratchOff({
       setShowBlurOrverlay(false);
       setTilt({ x: 0, y: 0 });
       setShareButtonText("Share Win");
-      
+
       // Clear timeout on unmount
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       dispatch({
         type: SET_APP_COLOR,
         payload: APP_COLORS.DEFAULT,
@@ -379,6 +372,48 @@ export default function ScratchOff({
                   pointerEvents: "none",
                 }}
               />
+              {cardData?.numbers_json ? (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center rotate-[-4deg]">
+                  {(() => {
+                    const rows = chunk3(cardData.numbers_json);
+                    const winningRowIdx = findWinningRow(
+                      cardData.numbers_json,
+                      cardData.prize_amount,
+                      cardData.prize_asset_contract
+                    );
+
+                    return (
+                      <div className="grid grid-rows-4 gap-1">
+                        {rows.map((row, index) => {
+                          const isWinning = winningRowIdx === index;
+                          return (
+                            <div key={index} className="grid grid-cols-3 gap-1 rotate-1">
+                              {row.map((cell, cellIndex) => (
+                                <p
+                                  key={`${cell.amount}-${cellIndex}`}
+                                  className={`w-[77px] h-[77px] rounded-[14px] font-[ABCGaisyr] font-bold text-[24px] leading-[90%] italic flex items-center justify-center ${
+                                    isWinning
+                                      ? "text-[#00A151]/40 bg-[#00A151]/15"
+                                      : "text-[#000]/15 bg-[#000]/10"
+                                  }`}
+                                  style={{
+                                    filter:
+                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.35))",
+                                    textShadow:
+                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.35), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
+                                  }}
+                                >
+                                  {formatCell(cell.amount, cell.asset_contract)}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : null}
               {/* Scratch cover */}
               {(!cardData || (!cardData?.scratched && !scratched)) && (
                 <canvas
@@ -386,6 +421,7 @@ export default function ScratchOff({
                   width={CANVAS_WIDTH}
                   height={CANVAS_HEIGHT}
                   style={{
+                    zIndex: 20,
                     position: "absolute",
                     top: "50%",
                     left: "50%",
@@ -422,7 +458,7 @@ export default function ScratchOff({
             </span>
           </p>
           <div className="absolute w-[90%] bottom-[48px]">
-            <button 
+            <button
               onClick={handleShare}
               className="w-full py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px] hover:bg-white/10 transition-colors"
             >

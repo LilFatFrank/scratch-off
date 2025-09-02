@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { base } from "wagmi/chains";
 import { supabaseAdmin } from "~/lib/supabaseAdmin";
-import { USDC_ADDRESS } from "~/lib/constants";
 import { drawPrize } from "~/lib/drawPrize";
+import { generateNumbers } from "~/lib/generateNumbers";
+import { PRIZE_ASSETS, USDC_ADDRESS } from "~/lib/constants";
 
 // Payment verification function for Base chain with retry logic
 async function verifyPayment(
@@ -159,10 +160,23 @@ export async function POST(request: NextRequest) {
     // Create multiple cards
     const cardsToCreate = [];
     for (let i = 0; i < numberOfCards; i++) {
+      const prize = drawPrize(); // e.g., 0 | 0.5 | 1 | 2
+      // pick prize asset randomly (today pool contains USDC; add more later)
+      const prizeAsset =
+        PRIZE_ASSETS[Math.floor(Math.random() * PRIZE_ASSETS.length)] || USDC_ADDRESS;
+      // build 12 cells (3x4) with one winning row if prize > 0
+      const numbers = generateNumbers({
+        prizeAmount: prize,
+        prizeAsset,
+        decoyAmounts: [0.5, 1, 2, 5, 10],
+        decoyAssets: PRIZE_ASSETS as unknown as string[],
+      });
       cardsToCreate.push({
         user_wallet: userWallet,
         payment_tx: paymentTx,
-        prize_amount: drawPrize(),
+        prize_amount: prize,
+        prize_asset_contract: prizeAsset,
+        numbers_json: numbers,
         scratched: false,
         claimed: false,
         created_at: new Date().toISOString(),
@@ -219,7 +233,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('New cards created:', newCards);
     return NextResponse.json({ 
       success: true, 
       cards: newCards,

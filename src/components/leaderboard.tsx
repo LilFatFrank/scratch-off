@@ -9,7 +9,7 @@ const Leaderboard = () => {
 
   const textShadowStyle = {
     textShadow:
-      "0px 0px 3px #A38800, 0px 0px 6px #A38800, 0px 0px 20px #A38800, 0px 0px 40px #A38800, 0px 0px 70px #A38800, 0px 0px 120px #A38800",
+      "0px 0px 2px #A38800, 0px 0px 4px #A38800, 0px 0px 12px #A38800, 0px 0px 25px #A38800, 0px 0px 45px #A38800, 0px 0px 80px #A38800",
   };
 
   const formatAmount = (amount: number) => {
