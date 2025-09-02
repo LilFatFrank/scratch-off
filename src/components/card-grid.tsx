@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { chunk3, findWinningRow } from "~/lib/winningRow";
 import { formatCell } from "~/lib/formatCell";
+import { CardCell } from "~/app/interface/cardCell";
 
 interface Card {
   id: string;
@@ -15,7 +16,7 @@ interface Card {
   created_at: string;
   scratched: boolean;
   card_no: number;
-  numbers_json?: any[];
+  numbers_json?: CardCell[];
   prize_asset_contract?: string;
 }
 
