@@ -76,14 +76,14 @@ export default function CardGrid({
                                   key={`${cell.amount}-${cellIndex}`}
                                   className={`w-[17.5px] h-[17.5px] rounded-[3px] font-[ABCGaisyr] font-bold text-[8px] leading-[90%] italic flex items-center justify-center ${
                                     isWinning
-                                      ? "text-[#00A151]/20 bg-[#00A151]/10"
-                                      : "text-[#000]/10 bg-[#000]/5"
+                                      ? "!text-[#00A151]/20 !bg-[#00A151]/10"
+                                      : "!text-[#000]/10 !bg-[#000]/5"
                                   }`}
                                   style={{
                                     filter:
-                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.35))",
+                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.15))",
                                     textShadow:
-                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.35), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
+                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.15), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
                                   }}
                                 >
                                   {formatCell(cell.amount, cell.asset_contract)}

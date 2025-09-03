@@ -393,14 +393,14 @@ export default function ScratchOff({
                                   key={`${cell.amount}-${cellIndex}`}
                                   className={`w-[77px] h-[77px] rounded-[14px] font-[ABCGaisyr] font-bold text-[24px] leading-[90%] italic flex items-center justify-center ${
                                     isWinning
-                                      ? "text-[#00A151]/40 bg-[#00A151]/15"
-                                      : "text-[#000]/15 bg-[#000]/10"
+                                      ? "!text-[#00A151]/40 !bg-[#00A151]/15"
+                                      : "!text-[#000]/15 !bg-[#000]/10"
                                   }`}
                                   style={{
                                     filter:
-                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.35))",
+                                      "drop-shadow(0px 0.5px 0.5px rgba(0, 0, 0, 0.15))",
                                     textShadow:
-                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.35), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
+                                      "0px 0.5px 0.5px rgba(0, 0, 0, 0.15), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
                                   }}
                                 >
                                   {formatCell(cell.amount, cell.asset_contract)}

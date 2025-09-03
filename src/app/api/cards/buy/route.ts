@@ -19,7 +19,7 @@ async function verifyPayment(
   // Create public client for Base
   const client = createPublicClient({
     chain: base,
-    transport: http(),
+    transport: http(process.env.BASE_RPC_URL),
   });
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {

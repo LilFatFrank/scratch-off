@@ -9,7 +9,7 @@ const Leaderboard = () => {
 
   const textShadowStyle = {
     textShadow:
-      "0px 0px 2px #A38800, 0px 0px 4px #A38800, 0px 0px 12px #A38800, 0px 0px 25px #A38800, 0px 0px 45px #A38800, 0px 0px 80px #A38800",
+      "0px 0px 1px #A38800, 0px 0px 2px #A38800, 0px 0px 6px #A38800, 0px 0px 12px #A38800",
   };
 
   const formatAmount = (amount: number) => {
@@ -175,11 +175,11 @@ const Leaderboard = () => {
         </motion.p>
         
         {/* Rest of the leaderboard starting from #4 */}
-        <motion.div 
+                <motion.div
           className="space-y-4 mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ duration: 0.3 }}
         >
           {restOfUsers.map((user, index) => {
             const rank = index + 4; // Start from #4
@@ -187,9 +187,9 @@ const Leaderboard = () => {
               <motion.div
                 key={user.wallet}
                 className="flex items-center justify-between w-full"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + index * 0.05 }}
+                transition={{ duration: 0.2, delay: index * 0.02 }}
               >
                 <div className="flex items-center gap-3">
                   <Image

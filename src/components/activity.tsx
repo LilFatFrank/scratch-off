@@ -91,9 +91,9 @@ const Activity = () => {
           <motion.div
             key={reveal.id}
             className="flex items-center justify-between w-full"
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.2, delay: index * 0.01 }}
           >
             <div className="flex items-center gap-3">
               <Image
@@ -102,7 +102,7 @@ const Activity = () => {
                 width={48}
                 height={48}
                 loading="lazy"
-                className="rounded-full object-cover"
+                className="rounded-full !w-[48px] !h-[48px] object-cover"
               />
               <div className="space-y-1">
                 <p

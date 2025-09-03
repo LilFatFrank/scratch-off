@@ -78,8 +78,8 @@ const ProfilePage = () => {
     const targetAmount = state.user?.amount_won || 0;
     const duration = 2000; // 2 seconds
     const steps = 60; // 60 steps for smooth animation
-    const increment = targetAmount / steps;
-    let current = 0;
+    const increment = (targetAmount - 0.01) / steps;
+    let current = 0.01; // Start from 1 cent
 
     const timer = setInterval(() => {
       current += increment;
@@ -87,7 +87,7 @@ const ProfilePage = () => {
         setDisplayAmount(targetAmount);
         clearInterval(timer);
       } else {
-        setDisplayAmount(Math.floor(current));
+        setDisplayAmount(Math.max(0.01, current)); // Ensure it never goes below 1 cent
       }
     }, duration / steps);
 
