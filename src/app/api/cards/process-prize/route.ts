@@ -147,6 +147,18 @@ export async function POST(request: NextRequest) {
         console.error("Error creating free cards:", freeCardsError);
       } else {
         console.log(`Created ${freeCardsToAward} free cards for level up`);
+        
+        // Update user's cards_count to reflect the new free cards
+        const { error: cardsCountUpdateError } = await supabaseAdmin
+          .from("users")
+          .update({
+            cards_count: (user.cards_count || 0) + freeCardsToAward,
+          })
+          .eq("wallet", userWallet);
+
+        if (cardsCountUpdateError) {
+          console.error("Error updating user cards_count:", cardsCountUpdateError);
+        }
       }
     }
 
@@ -256,7 +268,7 @@ export async function POST(request: NextRequest) {
               username: friendCell.friend_username,
               pfp: friendCell.friend_pfp,
               fid: friendCell.friend_fid || 0,
-              cards_count: 0,
+              cards_count: 1,
               total_reveals: 0,
               total_wins: 0,
               amount_won: 0,
