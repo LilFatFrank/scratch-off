@@ -155,7 +155,7 @@ const ProfilePage = () => {
             {(displayAmount || 0).toLocaleString("en-US", {
               style: "currency",
               currency: "USD",
-              minimumFractionDigits: 0,
+              minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
           </motion.p>

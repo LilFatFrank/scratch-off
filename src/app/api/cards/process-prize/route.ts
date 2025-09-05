@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const prizeAmount = Number(card.prize_amount || 0);
     const prizeAsset = card.prize_asset_contract;
     const newTotalWins = (user.total_wins || 0) + (prizeAmount === 0 ? 1 : 0);
-    const newAmountWon = (user.amount_won || 0) + prizeAmount === -1 ? 0 : prizeAmount;
+    const newAmountWon = (user.amount_won || 0) + (prizeAmount === -1 ? 0 : prizeAmount);
 
     // Level progression logic
     const currentLevel = user.current_level || 1;

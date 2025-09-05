@@ -83,7 +83,10 @@ export default function ScratchOff({
 
     try {
       await actions.composeCast({
-        text: prizeAmount > 0 ? `I just won $${prizeAmount}!` : `I just won a free card for @${bestFriend?.username}!`,
+        text:
+          prizeAmount > 0
+            ? `I just won ${formatCell(prizeAmount, USDC_ADDRESS)}!`
+            : `I just won a free card for @${bestFriend?.username}!`,
         embeds: [frameUrl],
       });
     } catch (error) {
@@ -442,7 +445,10 @@ export default function ScratchOff({
           {cardData?.prize_amount || prizeAmount
             ? prizeAmount === -1 || cardData?.prize_amount === -1
               ? `Won free card!`
-              : `Won $${cardData?.prize_amount || prizeAmount}!`
+              : `Won ${formatCell(
+                  cardData?.prize_amount || prizeAmount,
+                  USDC_ADDRESS
+                )}!`
             : " No win!"}
         </p>
         <div className="flex-1 grow">
@@ -541,20 +547,33 @@ export default function ScratchOff({
                                 >
                                   {cell.friend_pfp ? (
                                     // Show friend PFP if available
-                                    <Image
-                                      src={cell.friend_pfp}
-                                      alt={`${
-                                        cell.friend_username || "Friend"
-                                      }`}
-                                      width={48}
-                                      height={48}
-                                      className="rounded-full object-cover"
-                                      style={{
-                                        width: 48,
-                                        height: 48,
-                                      }}
-                                      unoptimized
-                                    />
+                                    <div className="relative">
+                                      <Image
+                                        src={cell.friend_pfp}
+                                        alt={`${
+                                          cell.friend_username || "Friend"
+                                        }`}
+                                        width={48}
+                                        height={48}
+                                        className="rounded-full object-cover"
+                                        style={{
+                                          width: 48,
+                                          height: 48,
+                                          filter: "saturate(0.01)",
+                                          opacity: 0.8,
+                                        }}
+                                        unoptimized
+                                      />
+                                      {isWinning && (
+                                        <div
+                                          className="absolute inset-0 rounded-full"
+                                          style={{
+                                            backgroundColor: "#00a151",
+                                            opacity: 0.4,
+                                          }}
+                                        />
+                                      )}
+                                    </div>
                                   ) : (
                                     // Show amount if no friend PFP
                                     formatCell(
@@ -620,18 +639,23 @@ export default function ScratchOff({
               <>
                 <br />
                 <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[92%] italic">
-                  ${prizeAmount}!
+                  {formatCell(prizeAmount, USDC_ADDRESS)}!
                 </span>
               </>
             ) : null}
           </p>
           <div className="absolute w-[90%] bottom-[48px]">
-            <button
-              onClick={handleShare}
-              className="w-full py-2 bg-transparent border border-white/20 rounded-[40px] text-white font-semibold text-[14px] hover:bg-white/10 transition-colors"
-            >
-              {shareButtonText}
-            </button>
+            <div className="w-full p-1 rounded-[40px] border border-white">
+              <button
+                onClick={handleShare}
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                style={{
+                  color: APP_COLORS.WON,
+                }}
+              >
+                {shareButtonText}
+              </button>
+            </div>
           </div>
         </div>
       )}

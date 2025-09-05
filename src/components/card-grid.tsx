@@ -4,6 +4,7 @@ import Image from "next/image";
 import { chunk3, findWinningRow } from "~/lib/winningRow";
 import { formatCell } from "~/lib/formatCell";
 import { Card } from "~/app/interface/card";
+import { USDC_ADDRESS } from "~/lib/constants";
 
 interface CardGridProps {
   cards: Card[];
@@ -49,7 +50,7 @@ export default function CardGrid({
                 <div
                   className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 rounded-lg z-30 flex items-center justify-center font-bold text-center text-white`}
                 >
-                  {card.prize_amount > 0 ? `$${card.prize_amount}` : ""}
+                  {card.prize_amount > 0 ? `${formatCell(card.prize_amount, card.prize_asset_contract || USDC_ADDRESS)}` : ""}
                 </div>
               ) : null}
               {card.scratched && card.numbers_json ? (
@@ -88,18 +89,31 @@ export default function CardGrid({
                                 >
                                   {cell.friend_pfp ? (
                                     // Show friend PFP if available
-                                    <Image
-                                      src={cell.friend_pfp}
-                                      alt={`${cell.friend_username || 'Friend'}`}
-                                      width={12}
-                                      height={12}
-                                      className="rounded-full object-cover"
-                                      style={{
-                                        width: 12,
-                                        height: 12,
-                                      }}
-                                      unoptimized
-                                    />
+                                    <div className="relative">
+                                      <Image
+                                        src={cell.friend_pfp}
+                                        alt={`${cell.friend_username || 'Friend'}`}
+                                        width={12}
+                                        height={12}
+                                        className="rounded-full object-cover"
+                                        style={{
+                                          width: 12,
+                                          height: 12,
+                                          filter: "saturate(0.01)",
+                                          opacity: 0.8,
+                                        }}
+                                        unoptimized
+                                      />
+                                      {isWinning && (
+                                        <div
+                                          className="absolute inset-0 rounded-full"
+                                          style={{
+                                            backgroundColor: "#00a151",
+                                            opacity: 0.4,
+                                          }}
+                                        />
+                                      )}
+                                    </div>
                                   ) : (
                                     // Show amount if no friend PFP
                                     formatCell(cell.amount, cell.asset_contract || "")
