@@ -23,30 +23,6 @@ export const fetchUserInfo = async (userWallet: string) => {
   }
 };
 
-// Fetch user reveals when wallet connects
-export const fetchUserReveals = async (userWallet: string) => {
-  if (!userWallet) return;
-
-  try {
-    const { data, error } = await supabase
-      .from('reveals')
-      .select('*')
-      .eq('user_wallet', userWallet)
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (error) {
-      console.error("Failed to fetch user reveals:", error);
-      return [];
-    }
-
-    return data;
-  } catch (error) {
-    console.error("Failed to fetch user reveals:", error);
-    return []; // Return empty array instead of throwing
-  }
-};
-
 // Fetch user cards when wallet connects
 export const fetchUserCards = async (userWallet: string) => {
   if (!userWallet) return;
@@ -56,7 +32,8 @@ export const fetchUserCards = async (userWallet: string) => {
       .from('cards')
       .select('*')
       .eq('user_wallet', userWallet)
-      .order('card_no', { ascending: false });
+      .order('card_no', { ascending: false })
+      .limit(1000);
 
     if (error) {
       console.error("Failed to fetch user cards:", error);
@@ -95,7 +72,8 @@ export const fetchLeaderboard = async () => {
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .order('amount_won', { ascending: false });
+      .order('amount_won', { ascending: false })
+      .limit(100);
 
     if (error) {
       console.error("Failed to fetch leaderboard:", error);
@@ -115,7 +93,7 @@ export const fetchActivity = async () => {
       .from('reveals')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(500);
 
     if (error) {
       console.error("Failed to fetch activity:", error);
