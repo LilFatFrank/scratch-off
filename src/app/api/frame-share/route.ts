@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       <html>
         <head>
           <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}&friend_username=${friendUsername}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"${baseUrl}","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
-          <title>Won $${prizeAmount}!</title>
+          <title>Won $${Number(prizeAmount) > 0 ? `$${prizeAmount}!` : `a free card for @${friendUsername}!`}</title>
         </head>
         <body>
           <h1>${username} won ${Number(prizeAmount) > 0 ? `$${prizeAmount}!` : `a free card for @${friendUsername}!`}</h1>
