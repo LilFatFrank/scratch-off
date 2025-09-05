@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
           targetFid: friend_fid,
           notification: notificationResponse.data,
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (notificationError: any) {
         console.error(
           "Neynar notification failed:",
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 2: Find users in database with notification_enabled = true
-    const bestFriendFids = bestFriends.map(friend => friend.fid);
+    const bestFriendFids = bestFriends.map((friend) => friend.fid);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let usersToNotify: any[] = [];
 
@@ -116,7 +117,9 @@ export async function POST(request: NextRequest) {
         }
 
         usersToNotify = users || [];
-        console.log(`Found ${usersToNotify.length} users with notifications enabled`);
+        console.log(
+          `Found ${usersToNotify.length} users with notifications enabled`
+        );
       } catch (error) {
         console.error("Error querying database:", error);
         return NextResponse.json(
@@ -127,7 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Send notifications to eligible users
-    const targetFids = usersToNotify.map(user => user.fid);
+    const targetFids = usersToNotify.map((user) => user.fid);
     let notificationResult = null;
 
     if (targetFids.length > 0) {
@@ -174,7 +177,6 @@ export async function POST(request: NextRequest) {
       targetFids,
       notification: notificationResult,
     });
-
   } catch (error) {
     console.error("Error in send notification:", error);
     return NextResponse.json(

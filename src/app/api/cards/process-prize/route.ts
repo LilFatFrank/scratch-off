@@ -8,6 +8,7 @@ import { getRevealsToNextLevel } from "~/lib/level";
 import { PRIZE_ASSETS, tokenMeta, USDC_ADDRESS } from "~/lib/constants";
 import { generateNumbers } from "~/lib/generateNumbers";
 import { drawPrize } from "~/lib/drawPrize";
+import { CardCell } from "~/app/interface/cardCell";
 
 export async function POST(request: NextRequest) {
   try {
@@ -243,7 +244,7 @@ export async function POST(request: NextRequest) {
 
       if (friendCheckError || !existingFriend) {
         // Friend doesn't exist, create them using data from numbers_json
-        const friendCell = card.numbers_json.find((cell: any) => 
+        const friendCell = card.numbers_json.find((cell: CardCell) => 
           cell.friend_wallet === card.shared_to
         );
 
