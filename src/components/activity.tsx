@@ -97,7 +97,7 @@ const Activity = () => {
           >
             <div className="flex items-center gap-3">
               <Image
-                src={reveal.pfp}
+                src={reveal.pfp || "/assets/splash-image.png"}
                 alt={reveal.username}
                 width={48}
                 height={48}

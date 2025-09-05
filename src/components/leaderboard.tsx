@@ -73,7 +73,7 @@ const Leaderboard = () => {
               #2
             </p>
             <Image
-              src={second?.pfp}
+              src={second?.pfp || "/assets/splash-image.png"}
               alt="#2"
               width={80}
               height={80}
@@ -108,7 +108,7 @@ const Leaderboard = () => {
               #1
             </p>
             <Image
-              src={first?.pfp}
+              src={first?.pfp || "/assets/splash-image.png"}
               alt="#1"
               width={112}
               height={112}
@@ -144,7 +144,7 @@ const Leaderboard = () => {
               #3
             </p>
             <Image
-              src={third?.pfp}
+              src={third?.pfp || "/assets/splash-image.png"}
               alt="#3"
               width={80}
               height={80}
@@ -193,7 +193,7 @@ const Leaderboard = () => {
               >
                 <div className="flex items-center gap-3">
                   <Image
-                    src={user.pfp}
+                    src={user.pfp || "/assets/splash-image.png"}
                     alt={`#${rank}`}
                     width={48}
                     height={48}

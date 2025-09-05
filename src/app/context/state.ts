@@ -2,6 +2,7 @@ import { User } from "../interface/user";
 import { Card } from "../interface/card";
 import { AppStats } from "../interface/appStats";
 import { Reveal } from "../interface/reveal";
+import { BestFriend } from "../interface/bestFriends";
 
 export interface AppState {
   appBackground: string;
@@ -16,6 +17,7 @@ export interface AppState {
   leaderboard: User[] | [];
   activity: Reveal[] | [];
   playWinSound: (() => void) | null;
+  bestFriends: BestFriend[] | [];
 }
 
 const initialState: AppState = {
@@ -31,6 +33,7 @@ const initialState: AppState = {
   leaderboard: [],
   activity: [],
   playWinSound: null,
+  bestFriends: [],
 };
 
 export default initialState;

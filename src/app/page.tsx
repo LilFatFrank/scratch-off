@@ -8,77 +8,9 @@ import ScratchOff from "~/components/scratch-off";
 import CardGrid from "~/components/card-grid";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./interface/card";
-/* import {
-  fetchAppStats,
-  fetchUserCards,
-  fetchUserInfo,
-  fetchUserReveals,
-  fetchActivity,
-  fetchLeaderboard,
-} from "~/lib/userapis"; */
 
 export default function Home() {
   const [state, dispatch] = useContext(AppContext);
-
- /*  // Function to refresh cards (can be called after buying new cards)
-  const refreshCards = async () => {
-    try {
-      const cards = await fetchUserCards(state.publicKey);
-      dispatch({ type: SET_CARDS, payload: cards });
-    } catch (e) {
-      console.log("error refreshing cards", e);
-    }
-  };
-
-  // Function to refresh reveals (can be called after processing a prize)
-  const refreshReveals = async () => {
-    try {
-      const reveals = await fetchUserReveals(state.publicKey);
-      dispatch({ type: SET_USER_REVEALS, payload: reveals });
-    } catch (e) {
-      console.log("error refreshing reveals", e);
-    }
-  };
-
-  // Function to refresh user info (can be called after processing a prize)
-  const refreshUserInfo = async () => {
-    try {
-      const userInfo = await fetchUserInfo(state.publicKey);
-      dispatch({
-        type: SET_USER,
-        payload: userInfo,
-      });
-    } catch (e) {
-      console.log("error refreshing user info", e);
-    }
-  };
-
-  const refreshAppStats = async () => {
-    try {
-      const appStats = await fetchAppStats();
-      dispatch({ type: SET_APP_STATS, payload: appStats });
-    } catch (e) {
-      console.log("error refreshing app stats", e);
-    }
-  };
-
-  const refreshActivity = async () => {
-    try {
-      const activity = await fetchActivity();
-      dispatch({ type: SET_ACTIVITY, payload: activity });
-    } catch (e) {
-      console.log("error refreshing activity", e);
-    }
-  };
-
-  const refreshLeaderboard = async () => {
-    try {
-      const leaderboard = await fetchLeaderboard();
-      dispatch({ type: SET_LEADERBOARD, payload: leaderboard });
-    } catch (e) {
-      console.log("error refreshing leaderboard", e);
-    }
-  }; */
 
   const handleCardSelect = (card: Card) => {
     dispatch({ type: SET_SELECTED_CARD, payload: card });
@@ -107,14 +39,7 @@ export default function Home() {
           <ScratchOff
             cardData={state.selectedCard}
             isDetailView={true}
-            onPrizeRevealed={() => {
-              /* refreshUserInfo();
-              refreshReveals();
-              refreshCards();
-              refreshAppStats();
-              refreshActivity();
-              refreshLeaderboard(); */
-            }}
+            onPrizeRevealed={() => {}}
           />
         </motion.div>
       )}

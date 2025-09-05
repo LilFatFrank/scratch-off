@@ -36,7 +36,7 @@ export default function CardGrid({
             }}
             className="cursor-pointer h-fit relative"
             style={{
-              opacity: card.scratched || card.prize_amount > 0 ? 1 : 0.35,
+              opacity: !card.scratched || (card.scratched && card.prize_amount !== 0) ? 1 : 0.35,
             }}
             onClick={() => onCardSelect(card)}
           >
@@ -49,7 +49,7 @@ export default function CardGrid({
                 <div
                   className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 rounded-lg z-30 flex items-center justify-center font-bold text-center text-white`}
                 >
-                  {card.prize_amount ? `$${card.prize_amount}` : ""}
+                  {card.prize_amount > 0 ? `$${card.prize_amount}` : ""}
                 </div>
               ) : null}
               {card.scratched && card.numbers_json ? (
@@ -72,7 +72,7 @@ export default function CardGrid({
                               className="grid grid-cols-3 gap-[1px] rotate-1"
                             >
                               {row.map((cell, cellIndex) => (
-                                <p
+                                <div
                                   key={`${cell.amount}-${cellIndex}`}
                                   className={`w-[17.5px] h-[17.5px] rounded-[3px] font-[ABCGaisyr] font-bold text-[8px] leading-[90%] italic flex items-center justify-center ${
                                     isWinning
@@ -86,8 +86,25 @@ export default function CardGrid({
                                       "0px 0.5px 0.5px rgba(0, 0, 0, 0.15), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
                                   }}
                                 >
-                                  {formatCell(cell.amount, cell.asset_contract)}
-                                </p>
+                                  {cell.friend_pfp ? (
+                                    // Show friend PFP if available
+                                    <Image
+                                      src={cell.friend_pfp}
+                                      alt={`${cell.friend_username || 'Friend'}`}
+                                      width={12}
+                                      height={12}
+                                      className="rounded-full object-cover"
+                                      style={{
+                                        width: 12,
+                                        height: 12,
+                                      }}
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    // Show amount if no friend PFP
+                                    formatCell(cell.amount, cell.asset_contract || "")
+                                  )}
+                                </div>
                               ))}
                             </div>
                           );

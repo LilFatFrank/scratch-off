@@ -14,7 +14,7 @@ interface BestFriendsResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const { fid, username, amount } = await request.json();
+    const { fid, username, amount, friend_fid } = await request.json();
 
     if (!fid || !username || amount === undefined) {
       return NextResponse.json(
@@ -32,7 +32,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 1: Fetch best friends from Neynar
+    // If friend_fid is present, send notification only to that specific friend
+    if (friend_fid && amount === -1) {
+      try {
+        const notificationResponse = await axios.post(
+          "https://api.neynar.com/v2/farcaster/frame/notifications/",
+          {
+            notification: {
+              target_url: "https://scratch-off-xi.vercel.app",
+              body: "Play Scratch Off to win big!",
+              title: `${username} just won a free card for you!`,
+            },
+            target_fids: [friend_fid],
+          },
+          {
+            headers: {
+              accept: "application/json",
+              "x-api-key": neynarApiKey,
+              "content-type": "application/json",
+            },
+          }
+        );
+
+        console.log(`Sent friend win notification to FID ${friend_fid}`);
+        return NextResponse.json({
+          success: true,
+          type: "friend_win",
+          targetFid: friend_fid,
+          notification: notificationResponse.data,
+        });
+      } catch (notificationError: any) {
+        console.error(
+          "Neynar notification failed:",
+          notificationError.response?.data || notificationError.message
+        );
+        return NextResponse.json(
+          { error: "Failed to send friend notification" },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Step 1: Fetch best friends from Neynar (for regular prize wins)
     let bestFriends: BestFriend[] = [];
     try {
       const bestFriendsResponse = await axios.get<BestFriendsResponse>(
@@ -127,6 +168,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      type: "regular_win",
       bestFriendsCount: bestFriends.length,
       usersToNotifyCount: usersToNotify.length,
       targetFids,

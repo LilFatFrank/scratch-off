@@ -11,6 +11,7 @@ import {
   SET_USER,
   SET_ACTIVITY,
   SET_PLAY_WIN_SOUND,
+  SET_BEST_FRIENDS,
 } from "~/app/context/actions";
 import sdk from "@farcaster/miniapp-sdk";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
@@ -18,6 +19,7 @@ import { USDC_ADDRESS } from "~/lib/constants";
 import {
   fetchActivity,
   fetchAppStats,
+  fetchBestFriends,
   fetchLeaderboard,
   fetchUserCards,
   fetchUserInfo,
@@ -32,7 +34,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useContext(AppContext);
   const [loading, setLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [numBuyCards, setNumBuyCards] = useState(1);
+  const [numBuyCards, setNumBuyCards] = useState(5);
   const [buyingCards, setBuyingCards] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const readyCalled = useRef(false);
@@ -48,9 +50,9 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Initialize audio on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      winAudioRef.current = new Audio('/assets/win.mp3');
-      winAudioRef.current.preload = 'auto';
+    if (typeof window !== "undefined") {
+      winAudioRef.current = new Audio("/assets/win.mp3");
+      winAudioRef.current.preload = "auto";
       winAudioRef.current.volume = 0.7; // Set volume to 70%
     }
   }, []);
@@ -59,8 +61,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const playWinSound = () => {
     if (winAudioRef.current) {
       winAudioRef.current.currentTime = 0; // Reset to beginning
-      winAudioRef.current.play().catch(error => {
-        console.log('Audio play failed:', error);
+      winAudioRef.current.play().catch((error) => {
+        console.log("Audio play failed:", error);
       });
     }
   };
@@ -121,8 +123,14 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
       if (userCards.status === "fulfilled")
         dispatch({ type: SET_CARDS, payload: userCards.value });
-      if (userInfo.status === "fulfilled")
+      if (userInfo.status === "fulfilled") {
         dispatch({ type: SET_USER, payload: userInfo.value });
+        const bestFriends = await fetchBestFriends(userInfo.value.fid);
+        dispatch({
+          type: SET_BEST_FRIENDS,
+          payload: bestFriends,
+        });
+      }
       if (appStats.status === "fulfilled")
         dispatch({ type: SET_APP_STATS, payload: appStats.value });
       if (leaderboard.status === "fulfilled")
@@ -155,19 +163,25 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, [state.publicKey]);
 
+  useEffect(() => {
+    if (state.bestFriends.length > 0) {
+      console.log("Best friends:", state.bestFriends);
+    }
+  }, [state.bestFriends]);
+
   // Setup real-time subscriptions
   useEffect(() => {
     if (state.publicKey) {
       console.log("Setting up subscriptions for wallet:", state.publicKey);
-      
+
       const subscriptions: RealtimeChannel[] = [];
-      
+
       // Subscribe to cards table
       const cardsSub = subscribeToTable(
         "cards",
         (payload) => {
           console.log("🎯 Cards subscription triggered:", payload);
-          
+
           // Only handle cards for the current user
           if (payload.new && payload.new.user_wallet === state.publicKey) {
             if (payload.eventType === "INSERT") {
@@ -196,26 +210,34 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         "users",
         (payload) => {
           console.log("🎯 Users subscription triggered:", payload);
-          
+
           // Handle local user updates
           if (payload.new && payload.new.wallet === state.publicKey) {
-            if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            if (
+              payload.eventType === "INSERT" ||
+              payload.eventType === "UPDATE"
+            ) {
               console.log("👤 Local user updated:", payload.new);
               dispatch({ type: SET_USER, payload: payload.new });
             }
           }
 
           // Handle leaderboard updates for any user change
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          if (
+            payload.eventType === "INSERT" ||
+            payload.eventType === "UPDATE"
+          ) {
             console.log("🏆 Updating leaderboard with user:", payload.new);
-            
+
             // Update leaderboard by replacing the user or adding new user
-            const updatedLeaderboard = currentLeaderboardRef.current.map((user) => {
-              if (user.wallet === payload.new.wallet) {
-                return payload.new;
+            const updatedLeaderboard = currentLeaderboardRef.current.map(
+              (user) => {
+                if (user.wallet === payload.new.wallet) {
+                  return payload.new;
+                }
+                return user;
               }
-              return user;
-            });
+            );
 
             // If it's a new user, add them to the leaderboard
             if (payload.eventType === "INSERT") {
@@ -245,7 +267,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         "reveals",
         (payload) => {
           console.log("🎯 Reveals subscription triggered:", payload);
-          
+
           if (payload.eventType === "INSERT") {
             // New reveal - add to beginning of activity list
             console.log("🎉 New reveal added to activity:", payload.new);
@@ -264,7 +286,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         "stats",
         (payload) => {
           console.log("🎯 Stats subscription triggered:", payload);
-          
+
           if (payload.eventType === "UPDATE") {
             // Stats updated - replace current stats
             console.log("📊 Stats updated:", payload.new);
@@ -278,8 +300,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       // Cleanup function
       return () => {
         console.log("🧹 Cleaning up subscriptions");
-        subscriptions.forEach(sub => {
-          if (sub && typeof sub.unsubscribe === 'function') {
+        subscriptions.forEach((sub) => {
+          if (sub && typeof sub.unsubscribe === "function") {
             sub.unsubscribe();
           }
         });
@@ -331,6 +353,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
           userWallet: state.publicKey,
           paymentTx: hash,
           numberOfCards,
+          friends: state.bestFriends,
         }),
       });
 
@@ -341,8 +364,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const result = await backendResponse.json();
-      haptics.impactOccurred('medium');
-      haptics.notificationOccurred('success');
+      haptics.impactOccurred("medium");
+      haptics.notificationOccurred("success");
       refreshCards();
       setShowBuyModal(false);
     } catch (error) {
@@ -628,7 +651,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
                   </button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {[1, 5, 10, 100, 200, 1000].map((amount) => (
+                  {[5, 3, 1].map((amount) => (
                     <button
                       key={amount}
                       className={`py-[14px] px-[18px] rounded-[46px] transition-colors ${

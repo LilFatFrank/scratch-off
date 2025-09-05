@@ -128,3 +128,14 @@ export const fetchActivity = async () => {
     return [];
   }
 };
+
+export const fetchBestFriends = async (fid: string) => {
+  try {
+    const response = await fetch(`/api/users/best-friends?fid=${fid}`);
+    const data = await response.json();
+    return data.bestFriends;
+  } catch (error) {
+    console.error("Failed to fetch best friends:", error);
+    return [];
+  }
+};

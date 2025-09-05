@@ -13,4 +13,5 @@ export interface Card {
   created_at: string;
   scratched: boolean;
   card_no: number;
+  shared_to: string;
 }

@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const prizeAmount = searchParams.get("prize") || "0";
     const username = searchParams.get("username") || "";
+    const friendUsername = searchParams.get("friend_username") || "";
     const baseUrl =
       process.env.NEXT_PUBLIC_URL || "https://scratch-off-xi.vercel.app";
 
@@ -14,11 +15,11 @@ export async function GET(request: NextRequest) {
       <!DOCTYPE html>
       <html>
         <head>
-          <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"${baseUrl}","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
+          <meta name="fc:frame" content='{"version":"next","imageUrl":"${baseUrl}/api/share-image?prize=${prizeAmount}&username=${username}&friend_username=${friendUsername}","button":{"title":"Play Scratch Off","action":{"type":"launch_miniapp","name":"Scratch Off","url":"${baseUrl}","splashImageUrl":"${APP_SPLASH_URL}","splashBackgroundColor":"${APP_SPLASH_BACKGROUND_COLOR}"}}}' />
           <title>Won $${prizeAmount}!</title>
         </head>
         <body>
-          <h1>${username} won $${prizeAmount}!</h1>
+          <h1>${username} won ${Number(prizeAmount) > 0 ? `$${prizeAmount}!` : `a free card for @${friendUsername}!`}</h1>
         </body>
       </html>
     `;

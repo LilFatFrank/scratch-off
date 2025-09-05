@@ -1,5 +1,5 @@
 import { Action } from "./action";
-import { SET_ACTIVITY, SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_LEADERBOARD, SET_PLAY_WIN_SOUND, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER } from "./actions";
+import { SET_ACTIVITY, SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_LEADERBOARD, SET_PLAY_WIN_SOUND, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER, SET_BEST_FRIENDS } from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -63,6 +63,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         playWinSound: action.payload
+      }
+    case SET_BEST_FRIENDS:
+      return {
+        ...state,
+        bestFriends: action.payload
       }
     default:
       return state;

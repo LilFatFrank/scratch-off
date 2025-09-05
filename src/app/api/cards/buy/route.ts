@@ -5,6 +5,7 @@ import { supabaseAdmin } from "~/lib/supabaseAdmin";
 import { drawPrize } from "~/lib/drawPrize";
 import { generateNumbers } from "~/lib/generateNumbers";
 import { PRIZE_ASSETS, USDC_ADDRESS } from "~/lib/constants";
+import { findWinningRow } from "~/lib/winningRow";
 
 // Payment verification function for Base chain with retry logic
 async function verifyPayment(
@@ -115,7 +116,9 @@ async function verifyPayment(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userWallet, paymentTx, numberOfCards } = await request.json();
+    const { userWallet, paymentTx, numberOfCards, friends } = await request.json();
+
+    console.log("Friends:", friends);
     
     if (!userWallet || !paymentTx || !numberOfCards) {
       return NextResponse.json(
@@ -170,7 +173,15 @@ export async function POST(request: NextRequest) {
         prizeAsset,
         decoyAmounts: [0.5, 1, 2, 5, 10],
         decoyAssets: PRIZE_ASSETS as unknown as string[],
+        friends,
       });
+      let shared_to = null;
+      if (prize === -1) {
+        const winningRow = findWinningRow(numbers, prize, prizeAsset);
+        if (winningRow !== null && winningRow !== -1) {
+          shared_to = numbers[winningRow * 3].friend_wallet;
+        }
+      }
       cardsToCreate.push({
         user_wallet: userWallet,
         payment_tx: paymentTx,
@@ -180,7 +191,8 @@ export async function POST(request: NextRequest) {
         scratched: false,
         claimed: false,
         created_at: new Date().toISOString(),
-        card_no: startCardNo + i
+        card_no: startCardNo + i,
+        shared_to,
       });
     }
 

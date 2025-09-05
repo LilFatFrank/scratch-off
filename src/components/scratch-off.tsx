@@ -3,17 +3,28 @@ import { useRef, useEffect, useState, useContext } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
-import { SET_APP_BACKGROUND, SET_APP_COLOR } from "~/app/context/actions";
+import {
+  SET_ACTIVITY,
+  SET_APP_BACKGROUND,
+  SET_APP_COLOR,
+  SET_APP_STATS,
+  SET_CARDS,
+  SET_LEADERBOARD,
+  SET_USER,
+} from "~/app/context/actions";
 import {
   APP_COLORS,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   SCRATCH_RADIUS,
+  USDC_ADDRESS,
 } from "~/lib/constants";
 import { useMiniApp } from "@neynar/react";
 import { Card } from "~/app/interface/card";
 import { formatCell } from "~/lib/formatCell";
 import { chunk3, findWinningRow } from "~/lib/winningRow";
+import { getRevealsToNextLevel } from "~/lib/level";
+import { BestFriend } from "~/app/interface/bestFriends";
 
 interface ScratchOffProps {
   cardData: Card | null;
@@ -35,6 +46,7 @@ export default function ScratchOff({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [shareButtonText, setShareButtonText] = useState("Share Win");
+  const [bestFriend, setBestFriend] = useState<BestFriend | null>(null);
 
   const { actions, haptics } = useMiniApp();
 
@@ -56,8 +68,6 @@ export default function ScratchOff({
     setTilt({ x: 0, y: 0 });
   };
 
-  console.log("cardData", cardData);
-
   const handleShare = async () => {
     if (!state.user) return;
 
@@ -68,11 +78,12 @@ export default function ScratchOff({
       new URLSearchParams({
         prize: prizeAmount.toString(),
         username: state.user.username || "",
+        friend_username: bestFriend?.username || "",
       }).toString();
 
     try {
       await actions.composeCast({
-        text: `I just won $${prizeAmount}!`,
+        text: prizeAmount > 0 ? `I just won $${prizeAmount}!` : `I just won a free card for @${bestFriend?.username}!`,
         embeds: [frameUrl],
       });
     } catch (error) {
@@ -168,9 +179,102 @@ export default function ScratchOff({
         // Use prize amount from card data directly
         const prizeAmount = cardData?.prize_amount || 0;
         setPrizeAmount(prizeAmount);
-        setShowBlurOrverlay(prizeAmount > 0);
+        setShowBlurOrverlay(prizeAmount > 0 || prizeAmount === -1);
 
-        if (prizeAmount > 0) {
+        // optimistic update
+        dispatch({
+          type: SET_APP_STATS,
+          payload: {
+            ...state.appStats,
+            reveals: (state.appStats?.reveals || 0) + 1,
+            winnings:
+              (state.appStats?.winnings || 0) +
+              (prizeAmount < 0 ? 0 : prizeAmount),
+          },
+        });
+        dispatch({
+          type: SET_CARDS,
+          payload: state.cards.map((card) =>
+            card.id === cardData?.id
+              ? {
+                  ...card,
+                  scratched: true,
+                  scratched_at: new Date().toISOString(),
+                  claimed: true,
+                }
+              : card
+          ),
+        });
+        dispatch({
+          type: SET_USER,
+          payload: {
+            ...state.user,
+            amount_won:
+              (state.user?.amount_won || 0) +
+              (prizeAmount < 0 ? 0 : prizeAmount),
+            total_wins: (state.user?.total_wins || 0) + 1,
+            total_reveals: (state.user?.total_reveals || 0) + 1,
+            current_level:
+              getRevealsToNextLevel(state.user?.current_level || 1) === 0
+                ? (state.user?.current_level || 1) + 1
+                : state.user?.current_level || 1,
+            reveals_to_next_level:
+              (state.user?.reveals_to_next_level ||
+                getRevealsToNextLevel(state.user?.current_level || 1)) === 0
+                ? getRevealsToNextLevel((state.user?.current_level || 1) + 1)
+                : getRevealsToNextLevel(state.user?.current_level || 1),
+            last_active: new Date().toISOString(),
+          },
+        });
+        dispatch({
+          type: SET_ACTIVITY,
+          payload: [
+            ...state.activity,
+            {
+              id: cardData?.id + new Date().toISOString(),
+              card_id: cardData?.id,
+              user_wallet: cardData?.user_wallet,
+              prize_amount: prizeAmount < 0 ? 0 : prizeAmount,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              username: state.user?.username,
+              pfp: state.user?.pfp,
+              payment_tx: cardData?.payment_tx,
+              payout_tx: null,
+              won: prizeAmount < 0 ? false : true,
+            },
+          ],
+        });
+        dispatch({
+          type: SET_LEADERBOARD,
+          payload: state.leaderboard.map((user) =>
+            user.wallet === cardData?.user_wallet
+              ? {
+                  ...user,
+                  amount_won:
+                    (state.user?.amount_won || 0) +
+                    (prizeAmount < 0 ? 0 : prizeAmount),
+                  total_wins: (state.user?.total_wins || 0) + 1,
+                  total_reveals: (state.user?.total_reveals || 0) + 1,
+                  current_level:
+                    getRevealsToNextLevel(state.user?.current_level || 1) === 0
+                      ? (state.user?.current_level || 1) + 1
+                      : state.user?.current_level || 1,
+                  reveals_to_next_level:
+                    (state.user?.reveals_to_next_level ||
+                      getRevealsToNextLevel(state.user?.current_level || 1)) ===
+                    0
+                      ? getRevealsToNextLevel(
+                          (state.user?.current_level || 1) + 1
+                        )
+                      : getRevealsToNextLevel(state.user?.current_level || 1),
+                  last_active: new Date().toISOString(),
+                }
+              : user
+          ),
+        });
+
+        if (prizeAmount > 0 || prizeAmount === -1) {
           dispatch({
             type: SET_APP_COLOR,
             payload: APP_COLORS.WON,
@@ -190,6 +294,7 @@ export default function ScratchOff({
               fid: state.user?.fid,
               username: state.user?.username,
               amount: prizeAmount,
+              friend_fid: bestFriend?.fid,
             }),
           }).catch((error) => {
             console.error("Failed to send notification:", error);
@@ -243,7 +348,7 @@ export default function ScratchOff({
 
   useEffect(() => {
     if (cardData && cardData.scratched) {
-      if (cardData.prize_amount > 0) {
+      if (cardData.prize_amount > 0 || cardData.prize_amount === -1) {
         dispatch({
           type: SET_APP_COLOR,
           payload: APP_COLORS.WON,
@@ -262,6 +367,32 @@ export default function ScratchOff({
           payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.LOST})`,
         });
       }
+    }
+  }, [cardData]);
+
+  // Populate best friend state when cardData changes
+  useEffect(() => {
+    if (cardData?.numbers_json && cardData?.shared_to) {
+      const friendCell = cardData.numbers_json.find(
+        (cell) => cell.friend_wallet === cardData.shared_to
+      );
+
+      if (
+        friendCell &&
+        friendCell.friend_fid &&
+        friendCell.friend_username &&
+        friendCell.friend_pfp &&
+        friendCell.friend_wallet
+      ) {
+        setBestFriend({
+          fid: friendCell.friend_fid,
+          username: friendCell.friend_username,
+          pfp: friendCell.friend_pfp,
+          wallet: friendCell.friend_wallet,
+        });
+      }
+    } else {
+      setBestFriend(null);
     }
   }, [cardData]);
 
@@ -309,7 +440,9 @@ export default function ScratchOff({
           }}
         >
           {cardData?.prize_amount || prizeAmount
-            ? `Won $${cardData?.prize_amount || prizeAmount}!`
+            ? prizeAmount === -1 || cardData?.prize_amount === -1
+              ? `Won free card!`
+              : `Won $${cardData?.prize_amount || prizeAmount}!`
             : " No win!"}
         </p>
         <div className="flex-1 grow">
@@ -387,9 +520,12 @@ export default function ScratchOff({
                         {rows.map((row, index) => {
                           const isWinning = winningRowIdx === index;
                           return (
-                            <div key={index} className="grid grid-cols-3 gap-1 rotate-1">
+                            <div
+                              key={index}
+                              className="grid grid-cols-3 gap-1 rotate-1"
+                            >
                               {row.map((cell, cellIndex) => (
-                                <p
+                                <div
                                   key={`${cell.amount}-${cellIndex}`}
                                   className={`w-[77px] h-[77px] rounded-[14px] font-[ABCGaisyr] font-bold text-[24px] leading-[90%] italic flex items-center justify-center ${
                                     isWinning
@@ -403,8 +539,30 @@ export default function ScratchOff({
                                       "0px 0.5px 0.5px rgba(0, 0, 0, 0.15), 0px -0.5px 0.5px rgba(255, 255, 255, 0.1)",
                                   }}
                                 >
-                                  {formatCell(cell.amount, cell.asset_contract)}
-                                </p>
+                                  {cell.friend_pfp ? (
+                                    // Show friend PFP if available
+                                    <Image
+                                      src={cell.friend_pfp}
+                                      alt={`${
+                                        cell.friend_username || "Friend"
+                                      }`}
+                                      width={48}
+                                      height={48}
+                                      className="rounded-full object-cover"
+                                      style={{
+                                        width: 48,
+                                        height: 48,
+                                      }}
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    // Show amount if no friend PFP
+                                    formatCell(
+                                      cell.amount,
+                                      cell.asset_contract || USDC_ADDRESS
+                                    )
+                                  )}
+                                </div>
                               ))}
                             </div>
                           );
@@ -451,11 +609,21 @@ export default function ScratchOff({
             unoptimized
           />
           <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[92%] italic rotate-[-6deg]">
-            You&apos;ve won
-            <br />
-            <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[92%] italic">
-              ${prizeAmount}!
-            </span>
+            {prizeAmount > 0 ? (
+              <>You&apos;ve won</>
+            ) : (
+              <>
+                You&apos;ve won a free card for you and @{bestFriend?.username}
+              </>
+            )}
+            {prizeAmount > 0 ? (
+              <>
+                <br />
+                <span className="font-[ABCGaisyr] font-bold text-white text-[94px] leading-[92%] italic">
+                  ${prizeAmount}!
+                </span>
+              </>
+            ) : null}
           </p>
           <div className="absolute w-[90%] bottom-[48px]">
             <button

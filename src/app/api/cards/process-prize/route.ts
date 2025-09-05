@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     const { data: card, error: cardError } = await supabaseAdmin
       .from("cards")
-      .select("id, payment_tx, prize_amount, prize_asset_contract, scratched")
+      .select("id, payment_tx, prize_amount, prize_asset_contract, scratched, numbers_json, shared_to")
       .eq("id", cardId)
       .single();
     if (cardError || !card) {
@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     const newTotalReveals = (user.total_reveals || 0) + 1;
     const prizeAmount = Number(card.prize_amount || 0);
     const prizeAsset = card.prize_asset_contract;
-    const newTotalWins = (user.total_wins || 0) + (prizeAmount > 0 ? 1 : 0);
-    const newAmountWon = (user.amount_won || 0) + prizeAmount;
+    const newTotalWins = (user.total_wins || 0) + (prizeAmount === 0 ? 1 : 0);
+    const newAmountWon = (user.amount_won || 0) + prizeAmount === -1 ? 0 : prizeAmount;
 
     // Level progression logic
     const currentLevel = user.current_level || 1;
@@ -120,6 +120,7 @@ export async function POST(request: NextRequest) {
           prizeAsset,
           decoyAmounts: [0.5, 1, 2, 5, 10],
           decoyAssets: PRIZE_ASSETS as unknown as string[],
+          friends: [],
         });
         freeCardsToCreate.push({
           user_wallet: userWallet,
@@ -131,6 +132,7 @@ export async function POST(request: NextRequest) {
           claimed: false,
           created_at: new Date().toISOString(),
           card_no: (user.cards_count || 0) + i + 1,
+          shared_to: null,
         });
       }
 
@@ -158,7 +160,7 @@ export async function POST(request: NextRequest) {
           prize_amount: prizeAmount,
           payment_tx: updatedCard.payment_tx,
           payout_tx: null, // Will be set if payment succeeds
-          won: prizeAmount > 0,
+          won: prizeAmount !== 0,
           username: username,
           pfp: pfp,
           created_at: new Date().toISOString(),
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
           card_id: cardId,
           prize_amount: prizeAmount,
           payment_tx: updatedCard.payment_tx,
-          won: prizeAmount > 0,
+          won: prizeAmount !== 0,
         });
       } else {
         console.log("Reveal stored successfully");
@@ -183,6 +185,18 @@ export async function POST(request: NextRequest) {
 
     // If no prize, return early
     if (prizeAmount === 0) {
+      // Mark card as claimed since the process is complete
+      const { error: claimUpdateError } = await supabaseAdmin
+        .from("cards")
+        .update({
+          claimed: true,
+        })
+        .eq("id", cardId);
+
+      if (claimUpdateError) {
+        console.error("Error updating card as claimed:", claimUpdateError);
+      }
+
       // Update app stats - increment reveals only (no winnings to add)
       const { data: currentStats, error: fetchStatsError } = await supabaseAdmin
         .from("stats")
@@ -213,6 +227,160 @@ export async function POST(request: NextRequest) {
         leveledUp,
         newLevel: leveledUp ? newLevel : null,
         freeCardsAwarded: leveledUp ? freeCardsToAward : 0,
+      });
+    }
+
+    // Handle friend wins (prize_amount === -1)
+    if (prizeAmount === -1) {
+      // Check if friend exists in the app
+      const { data: existingFriend, error: friendCheckError } = await supabaseAdmin
+        .from("users")
+        .select("username, pfp, wallet, cards_count")
+        .eq("wallet", card.shared_to)
+        .single();
+
+      let friendUserId: string | null = null;
+
+      if (friendCheckError || !existingFriend) {
+        // Friend doesn't exist, create them using data from numbers_json
+        const friendCell = card.numbers_json.find((cell: any) => 
+          cell.friend_wallet === card.shared_to
+        );
+
+        if (friendCell && friendCell.friend_username && friendCell.friend_pfp && friendCell.friend_wallet) {
+          const { data: newFriend, error: createFriendError } = await supabaseAdmin
+            .from("users")
+            .insert({
+              wallet: friendCell.friend_wallet,
+              username: friendCell.friend_username,
+              pfp: friendCell.friend_pfp,
+              fid: friendCell.friend_fid || 0,
+              cards_count: 0,
+              total_reveals: 0,
+              total_wins: 0,
+              amount_won: 0,
+              current_level: 1,
+              reveals_to_next_level: getRevealsToNextLevel(1),
+              notification_enabled: false,
+              created_at: new Date().toISOString(),
+              last_active: new Date().toISOString(),
+            })
+            .select("wallet, cards_count")
+            .single();
+
+          if (createFriendError) {
+            console.error("Error creating friend user:", createFriendError);
+            return NextResponse.json(
+              { error: "Failed to create friend user" },
+              { status: 500 }
+            );
+          }
+
+          friendUserId = newFriend.wallet;
+          console.log(`Created new friend user: ${friendCell.friend_username}`);
+        } else {
+          console.error("Friend data not found in numbers_json");
+          return NextResponse.json(
+            { error: "Friend data not found" },
+            { status: 500 }
+          );
+        }
+      } else {
+        // Friend exists, use their data
+        friendUserId = existingFriend.wallet;
+        console.log(`Friend user exists: ${existingFriend.username}`);
+      }
+
+      // Create free card for the friend
+      if (friendUserId) {
+        const friendPrizeAmount = drawPrize(); // Generate a random prize for the friend's card
+        const friendPrizeAsset = PRIZE_ASSETS[Math.floor(Math.random() * PRIZE_ASSETS.length)] || USDC_ADDRESS;
+        
+        const friendCardNumbers = generateNumbers({
+          prizeAmount: friendPrizeAmount,
+          prizeAsset: friendPrizeAsset,
+          decoyAmounts: [0.5, 1, 2, 5, 10],
+          decoyAssets: PRIZE_ASSETS as unknown as string[],
+          friends: [], // Empty array since we don't need friend PFPs in this card
+        });
+
+        const { error: friendCardError } = await supabaseAdmin
+          .from("cards")
+          .insert({
+            user_wallet: card.shared_to,
+            payment_tx: "FREE_CARD_SHARED",
+            payout_tx: null,
+            prize_amount: friendPrizeAmount,
+            prize_asset_contract: friendPrizeAsset,
+            numbers_json: friendCardNumbers,
+            scratched: false,
+            claimed: false,
+            created_at: new Date().toISOString(),
+            scratched_at: new Date().toISOString(),
+            card_no: (existingFriend?.cards_count || 0) + 1,
+            shared_to: null,
+          });
+
+        if (friendCardError) {
+          console.error("Error creating friend card:", friendCardError);
+        } else {
+          console.log("Created free card for friend");
+        }
+
+        // Update friend's cards_count
+        if (existingFriend) {
+          await supabaseAdmin
+            .from("users")
+            .update({ 
+              cards_count: (existingFriend.cards_count || 0) + 1,
+              last_active: new Date().toISOString()
+            })
+            .eq("id", friendUserId);
+        }
+      }
+
+      // Mark card as claimed since the process is complete
+      const { error: claimUpdateError } = await supabaseAdmin
+        .from("cards")
+        .update({
+          claimed: true,
+        })
+        .eq("id", cardId);
+
+      if (claimUpdateError) {
+        console.error("Error updating card as claimed:", claimUpdateError);
+      }
+
+      // Update app stats - increment reveals only (no winnings for friend wins)
+      const { data: currentStats, error: fetchStatsError } = await supabaseAdmin
+        .from("stats")
+        .select("reveals")
+        .eq("id", 1)
+        .single();
+
+      if (!fetchStatsError && currentStats) {
+        const { error: statsError } = await supabaseAdmin
+          .from("stats")
+          .update({
+            reveals: currentStats.reveals + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", 1);
+
+        if (statsError) {
+          console.error("Error updating app stats:", statsError);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        prizeAmount: -1,
+        message: "Friend win! Both you and your friend get free cards!",
+        payoutTx: null,
+        leveledUp,
+        newLevel: leveledUp ? newLevel : null,
+        freeCardsAwarded: leveledUp ? freeCardsToAward : 0,
+        friendCardCreated: true,
       });
     }
 

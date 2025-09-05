@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import React from "react";
-import { readFileSync } from 'fs';
-import path from 'path';
+import { readFileSync } from "fs";
+import path from "path";
 
 export const runtime = "nodejs";
 
@@ -10,9 +10,17 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const prizeAmount = searchParams.get("prize") || "0";
     const username = searchParams.get("username") || "";
+    const friendUsername = searchParams.get("friend_username") || "";
 
     // Load the ABC Gaisyr Bold font
-    const fontBuffer = readFileSync(path.join(process.cwd(), 'public', 'fonts', 'ABCGaisyr-BoldItalic-Trial.otf'));
+    const fontBuffer = readFileSync(
+      path.join(
+        process.cwd(),
+        "public",
+        "fonts",
+        "ABCGaisyr-BoldItalic-Trial.otf"
+      )
+    );
 
     return new ImageResponse(
       React.createElement(
@@ -33,8 +41,8 @@ export async function GET(request: Request) {
         [
           // Background scratch card (blurred)
           React.createElement("img", {
-            src: 'https://scratch-off-xi.vercel.app/assets/scratched-card-image.png',
-            alt: 'scratch card background',
+            src: "https://scratch-off-xi.vercel.app/assets/scratched-card-image.png",
+            alt: "scratch card background",
             style: {
               position: "absolute",
               top: "50%",
@@ -48,11 +56,11 @@ export async function GET(request: Request) {
               transform: "translate(-50%, -50%)",
             },
           }),
-          
+
           // Background GIF
           React.createElement("img", {
-            src: 'https://scratch-off-xi.vercel.app/assets/winner.gif',
-            alt: 'winner',
+            src: "https://scratch-off-xi.vercel.app/assets/winner.gif",
+            alt: "winner",
             style: {
               position: "absolute",
               top: 0,
@@ -63,7 +71,7 @@ export async function GET(request: Request) {
               zIndex: 1,
             },
           }),
-          
+
           // Overlay for text readability
           React.createElement("div", {
             style: {
@@ -76,7 +84,7 @@ export async function GET(request: Request) {
               zIndex: 2,
             },
           }),
-          
+
           // Main content
           React.createElement(
             "div",
@@ -93,24 +101,62 @@ export async function GET(request: Request) {
                 transform: "rotate(-4deg)",
                 fontFamily: "ABCGaisyrBoldItalic",
                 fontWeight: "bold",
-                fontStyle: "italic"
+                fontStyle: "italic",
               },
             },
             [
-              username && React.createElement("div", {
-                style: {
-                  fontSize: "46px",
-                  lineHeight: "92%",
-                  marginBottom: "10px",
-                },
-              }, `${username} won`),
-              React.createElement("div", {
-                style: {
-                  fontSize: "94px",
-                  lineHeight: "92%",
-                  color: "#FFFFFF",
-                },
-              }, `$${prizeAmount}!`),
+              username &&
+                React.createElement(
+                  "div",
+                  {
+                    style: {
+                      fontSize: "46px",
+                      lineHeight: "92%",
+                      marginBottom: "10px",
+                    },
+                  },
+                  `${username} won`
+                ),
+              [
+                ...(Number(prizeAmount) > 0
+                  ? [
+                      React.createElement(
+                        "div",
+                        {
+                          style: {
+                            fontSize: "94px",
+                            lineHeight: "92%",
+                            color: "#FFFFFF",
+                          },
+                        },
+                        `$${prizeAmount}!`
+                      ),
+                    ]
+                  : [
+                      React.createElement(
+                        "div",
+                        {
+                          style: {
+                            fontSize: "46px",
+                            lineHeight: "92%",
+                            marginBottom: "10px",
+                          },
+                        },
+                        `a free card for`
+                      ),
+                      React.createElement(
+                        "div",
+                        {
+                          style: {
+                            fontSize: "94px",
+                            lineHeight: "92%",
+                            color: "#FFFFFF",
+                          },
+                        },
+                        `@${friendUsername}!`
+                      ),
+                    ]),
+              ],
             ]
           ),
         ]
@@ -120,7 +166,8 @@ export async function GET(request: Request) {
         height: 630,
         headers: {
           "Content-Type": "image/png",
-          "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
+          "Cache-Control":
+            "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
         },
         fonts: [
           {
@@ -136,4 +183,4 @@ export async function GET(request: Request) {
     console.error("Error generating share image:", error);
     return new Response("Failed to generate image", { status: 500 });
   }
-} 
+}
