@@ -16,6 +16,7 @@ import {
   APP_COLORS,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
+  CANVAS_DPI_SCALE,
   SCRATCH_RADIUS,
   USDC_ADDRESS,
 } from "~/lib/constants";
@@ -96,12 +97,31 @@ export default function ScratchOff({
     }
   };
 
-  // Draw the cover image on the canvas
+  // Draw the cover image on the canvas with high-DPI support
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // Set up high-DPI canvas
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const scale = CANVAS_DPI_SCALE * devicePixelRatio;
+    
+    // Set the actual canvas size to the scaled dimensions
+    canvas.width = CANVAS_WIDTH * scale;
+    canvas.height = CANVAS_HEIGHT * scale;
+    
+    // Scale the canvas back down using CSS
+    canvas.style.width = CANVAS_WIDTH + "px";
+    canvas.style.height = CANVAS_HEIGHT + "px";
+    
+    // Scale the drawing context so everything draws at the higher resolution
+    ctx.scale(scale, scale);
+    
+    // Enable image smoothing for better quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
     const coverImg = new window.Image();
     coverImg.src = "/assets/scratch-card-image.png";
@@ -595,8 +615,6 @@ export default function ScratchOff({
               {(!cardData || (!cardData?.scratched && !scratched)) && (
                 <canvas
                   ref={canvasRef}
-                  width={CANVAS_WIDTH}
-                  height={CANVAS_HEIGHT}
                   style={{
                     zIndex: 20,
                     position: "absolute",

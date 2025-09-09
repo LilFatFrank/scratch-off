@@ -153,6 +153,8 @@ export const SIGNED_KEY_REQUEST_TYPE = [
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const CANVAS_WIDTH = 343;
 export const CANVAS_HEIGHT = 418;
+// High-DPI scaling factor for crisp rendering
+export const CANVAS_DPI_SCALE = 2;
 export const SCRATCH_RADIUS = 24;
 export const APP_COLORS = {
   DEFAULT: "#7727DE",
