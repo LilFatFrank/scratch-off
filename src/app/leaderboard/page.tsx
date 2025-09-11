@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import { motion, PanInfo, useAnimation } from "framer-motion";
 import { AppContext } from "../context";
 import { APP_COLORS } from "../../lib/constants";
-import { SET_APP_BACKGROUND } from "../context/actions";
+import { SET_APP_BACKGROUND, SET_APP_COLOR } from "../context/actions";
 import Leaderboard from "../../components/leaderboard";
 import Activity from "../../components/activity";
 
@@ -70,11 +70,19 @@ const LeaderboardPage = () => {
       type: SET_APP_BACKGROUND,
       payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.LEADERBOARD})`,
     });
+    dispatch({
+      type: SET_APP_COLOR,
+      payload: APP_COLORS.LEADERBOARD,
+    });
 
     return () => {
       dispatch({
         type: SET_APP_BACKGROUND,
         payload: `linear-gradient(to bottom, #090210, ${APP_COLORS.DEFAULT})`,
+      });
+      dispatch({
+        type: SET_APP_COLOR,
+        payload: APP_COLORS.DEFAULT,
       });
     };
   }, []);

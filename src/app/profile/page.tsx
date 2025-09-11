@@ -187,8 +187,9 @@ const ProfilePage = () => {
           </motion.div>
 
           <motion.p className="text-white text-[14px] font-medium leading-[90%] text-center">
-            {state.user?.reveals_to_next_level || 25} scratch offs away from
-            level {(state.user?.current_level || 1) + 1}
+            {state.user?.reveals_to_next_level || 25} win
+            {state.user?.reveals_to_next_level !== 1 ? "s" : ""} away from level{" "}
+            {(state.user?.current_level || 1) + 1}
           </motion.p>
         </motion.div>
 

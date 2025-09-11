@@ -82,7 +82,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
       }
 
       const result = await backendResponse.json();
-      
+
       // If multiple cards were created, refetch user cards to ensure all are loaded
       if (result.totalCardsCreated > 1) {
         setTimeout(async () => {
@@ -91,14 +91,17 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             const userCards = await fetchUserCards(state.publicKey);
             if (userCards) {
               dispatch({ type: SET_CARDS, payload: userCards });
-              dispatch({ type: SET_UNSCRATCHED_CARDS, payload: userCards.filter(card => !card.scratched) });
+              dispatch({
+                type: SET_UNSCRATCHED_CARDS,
+                payload: userCards.filter((card) => !card.scratched),
+              });
             }
           } catch (error) {
             console.error("Failed to refetch cards after purchase:", error);
           }
         }, 1000); // Wait 1 second for database to be fully updated
       }
-      
+
       haptics.impactOccurred("medium");
       haptics.notificationOccurred("success");
       setShowBuyModal(false);
@@ -151,7 +154,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
           }}
         >
           <motion.div
-            className="border border-[#fff]/10 rounded-[8px] p-[10px] cursor-pointer"
+            className="border border-[#fff]/10 rounded-[8px] p-[10px]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -162,14 +165,11 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
               ease: "easeOut",
               delay: 0.6,
             }}
-            onClick={() => {
-              if (pathname !== "/") push("/");
-            }}
           >
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
               {mode === "swipeable" ? (
                 `${unscratchedCardsCount} card${
-                  unscratchedCardsCount > 1 ? "s" : ""
+                  unscratchedCardsCount !== 1 ? "s" : ""
                 } left`
               ) : (
                 <>
@@ -209,7 +209,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
         </motion.div>
 
         <AnimatePresence>
-          {showBigBuy && (
+          {showBigBuy && pathname === "/" && (
             <motion.div
               className="w-full p-1 rounded-[40px] border border-white"
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -232,6 +232,35 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
                 transition={{ duration: 0.1 }}
               >
                 Buy Cards
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {pathname !== "/" && (
+            <motion.div
+              className="w-full p-1 rounded-[40px] border border-white"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 25,
+                duration: 0.4,
+              }}
+            >
+              <motion.button
+                onClick={() => push("/")}
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                style={{
+                  color: state.appColor,
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.1 }}
+              >
+                Scratch Off
               </motion.button>
             </motion.div>
           )}

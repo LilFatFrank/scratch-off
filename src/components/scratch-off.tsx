@@ -32,11 +32,15 @@ interface ScratchOffProps {
   cardData: Card | null;
   isDetailView?: boolean;
   onPrizeRevealed?: (prizeAmount: number) => void;
+  hasNext?: boolean;
+  onNext?: () => void;
 }
 
 export default function ScratchOff({
   cardData,
   onPrizeRevealed,
+  hasNext,
+  onNext,
 }: ScratchOffProps) {
   const [state, dispatch] = useContext(AppContext);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -263,7 +267,9 @@ export default function ScratchOff({
         // Optimistically update unscratched cards - remove the scratched card
         dispatch({
           type: SET_UNSCRATCHED_CARDS,
-          payload: state.unscratchedCards.filter((card) => card.id !== cardData?.id),
+          payload: state.unscratchedCards.filter(
+            (card) => card.id !== cardData?.id
+          ),
         });
         dispatch({
           type: SET_USER,
@@ -729,7 +735,7 @@ export default function ScratchOff({
               </>
             ) : null}
           </p>
-          <div className="absolute w-[90%] bottom-[48px]">
+          <div className="absolute w-[90%] bottom-[48px] flex flex-col items-center justify-center gap-4">
             <div className="w-full p-1 rounded-[40px] border border-white">
               <button
                 onClick={handleShare}
@@ -741,6 +747,19 @@ export default function ScratchOff({
                 {shareButtonText}
               </button>
             </div>
+            {hasNext ? (
+              <div className="w-full p-1 rounded-[40px] border border-white">
+                <button
+                  onClick={onNext}
+                  className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                  style={{
+                    color: APP_COLORS.WON,
+                  }}
+                >
+                  Next Card
+                </button>
+              </div>
+            ) : null}
           </div>
         </motion.div>
       )}

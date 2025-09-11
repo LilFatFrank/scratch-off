@@ -72,23 +72,26 @@ export async function POST(request: NextRequest) {
     const newTotalWins = (user.total_wins || 0) + (prizeAmount === 0 ? 1 : 0);
     const newAmountWon = (user.amount_won || 0) + (prizeAmount === -1 ? 0 : prizeAmount);
 
-    // Level progression logic
+    // Level progression logic - only for wins (prize_amount !== 0)
     const currentLevel = user.current_level || 1;
-    const currentRevealsToNext =
-      user.reveals_to_next_level || getRevealsToNextLevel(1);
-    const newRevealsToNext = currentRevealsToNext - 1;
-
     let newLevel = currentLevel;
-    let newRevealsToNextLevel = newRevealsToNext;
+    let newRevealsToNextLevel = user.reveals_to_next_level || getRevealsToNextLevel(1);
     let leveledUp = false;
     let freeCardsToAward = 0;
 
-    // Check if user leveled up
-    if (newRevealsToNext <= 0) {
-      newLevel = currentLevel + 1;
-      newRevealsToNextLevel = getRevealsToNextLevel(newLevel);
-      freeCardsToAward = newLevel - 1; // Award free cards for new level
-      leveledUp = true;
+    if (prizeAmount !== 0) {
+      // Only update level progression for wins
+      const currentRevealsToNext = user.reveals_to_next_level || getRevealsToNextLevel(1);
+      const newRevealsToNext = currentRevealsToNext - 1;
+      newRevealsToNextLevel = newRevealsToNext;
+
+      // Check if user leveled up
+      if (newRevealsToNext <= 0) {
+        newLevel = currentLevel + 1;
+        newRevealsToNextLevel = getRevealsToNextLevel(newLevel);
+        freeCardsToAward = newLevel - 1; // Award free cards for new level
+        leveledUp = true;
+      }
     }
 
     const { error: userUpdateError } = await supabaseAdmin

@@ -211,6 +211,14 @@ export default function SwipeableCardStack({
                 <ScratchOff
                   cardData={current || null}
                   isDetailView
+                  hasNext={canGoNext}
+                  onNext={() => {
+                    if (canGoNext) {
+                      setDirection(1);
+                      const nextCard = cards[currentIndex + 1];
+                      if (nextCard) setCurrentCardNo(nextCard.card_no);
+                    }
+                  }}
                 />
               ) : (
                 <AnimatePresence>
