@@ -131,47 +131,23 @@ export default function ScratchOff({
     ctx.textBaseline = "top";
 
     // Use preloaded image from context
-    const coverImg = state.getScratchCardImage?.();
-    if (coverImg) {
+    const coverImg = new window.Image();
+    coverImg.src = "/assets/scratch-card-image.png";
+    coverImg.onload = () => {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-      // Ensure image is fully loaded before drawing
-      if (coverImg.complete && coverImg.naturalWidth > 0) {
-        // Scale the image to fill the entire canvas with highest quality
-        ctx.drawImage(
-          coverImg,
-          0,
-          0,
-          coverImg.naturalWidth,
-          coverImg.naturalHeight,
-          0,
-          0,
-          CANVAS_WIDTH,
-          CANVAS_HEIGHT
-        );
-      }
-    } else {
-      // Fallback: load image if not preloaded yet
-      const fallbackImg = new window.Image();
-      fallbackImg.crossOrigin = "anonymous";
-      fallbackImg.decoding = "sync";
-      fallbackImg.src = "/assets/scratch-card-image.png";
-      fallbackImg.onload = () => {
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-        // Use natural dimensions for highest quality
-        ctx.drawImage(
-          fallbackImg,
-          0,
-          0,
-          fallbackImg.naturalWidth,
-          fallbackImg.naturalHeight,
-          0,
-          0,
-          CANVAS_WIDTH,
-          CANVAS_HEIGHT
-        );
-      };
-    }
+      // Scale the image to fill the entire canvas, removing any borders
+      ctx.drawImage(
+        coverImg,
+        0,
+        0,
+        coverImg.width,
+        coverImg.height,
+        0,
+        0,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT
+      );
+    };
   }, []);
 
   // Scratch logic

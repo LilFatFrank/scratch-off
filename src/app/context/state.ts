@@ -17,7 +17,6 @@ export interface AppState {
   leaderboard: User[] | [];
   activity: Reveal[] | [];
   playWinSound: (() => void) | null;
-  getScratchCardImage: (() => HTMLImageElement | null) | null;
   getWinnerGif: (() => HTMLImageElement | null) | null;
   swipableMode: boolean;
   bestFriends: BestFriend[] | [];
@@ -38,7 +37,6 @@ const initialState: AppState = {
   leaderboard: [],
   activity: [],
   playWinSound: null,
-  getScratchCardImage: null,
   getWinnerGif: null,
   swipableMode: false,
   bestFriends: [],

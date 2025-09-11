@@ -13,7 +13,6 @@ import {
   SET_SELECTED_CARD,
   SET_USER,
   SET_BEST_FRIENDS,
-  SET_GET_SCRATCH_CARD_IMAGE,
   SET_GET_WINNER_GIF,
   SET_SWIPABLE_MODE,
   SET_UNSCRATCHED_CARDS,
@@ -82,11 +81,6 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         playWinSound: action.payload,
-      };
-    case SET_GET_SCRATCH_CARD_IMAGE:
-      return {
-        ...state,
-        getScratchCardImage: action.payload,
       };
     case SET_GET_WINNER_GIF:
       return {

@@ -10,7 +10,6 @@ import {
   SET_USER,
   SET_ACTIVITY,
   SET_PLAY_WIN_SOUND,
-  SET_GET_SCRATCH_CARD_IMAGE,
   SET_GET_WINNER_GIF,
   SET_BEST_FRIENDS,
   SET_UNSCRATCHED_CARDS,
@@ -47,7 +46,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Images for scratch-off - preload once and reuse
-  const scratchCardImageRef = useRef<HTMLImageElement | null>(null);
   const winnerGifRef = useRef<HTMLImageElement | null>(null);
 
   // Initialize audio and images on component mount
@@ -58,13 +56,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       winAudioRef.current.preload = "auto";
       winAudioRef.current.volume = 0.7; // Set volume to 70%
 
-      // Preload images with highest quality settings
-      scratchCardImageRef.current = new window.Image();
-      scratchCardImageRef.current.src = "/assets/scratch-card-image.png";
-      scratchCardImageRef.current.crossOrigin = "anonymous";
-      // Ensure image loads at full resolution
-      scratchCardImageRef.current.decoding = "sync";
-
+      // Preload winner gif
       winnerGifRef.current = new window.Image();
       winnerGifRef.current.src = "/assets/winner.gif";
     }
@@ -80,8 +72,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
-  // Functions to get preloaded images
-  const getScratchCardImage = () => scratchCardImageRef.current;
+  // Function to get preloaded winner gif
   const getWinnerGif = () => winnerGifRef.current;
 
   // Helper function to filter unscratched cards
@@ -108,10 +99,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   // Set functions in context
   useEffect(() => {
     dispatch({ type: SET_PLAY_WIN_SOUND, payload: playWinSound });
-    dispatch({
-      type: SET_GET_SCRATCH_CARD_IMAGE,
-      payload: getScratchCardImage,
-    });
     dispatch({ type: SET_GET_WINNER_GIF, payload: getWinnerGif });
     dispatch({ type: SET_REFETCH_USER_CARDS, payload: refetchUserCards });
   }, []);
