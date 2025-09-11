@@ -25,7 +25,7 @@ export default function CardGrid({
   return (
     <div className="w-full">
       <div className="grid grid-cols-4 gap-4 mx-auto">
-        {displayCards.map((card, index) => (
+        {displayCards.map((card) => (
           <motion.div
             key={card.id}
             layoutId={`card-${card.id}`}

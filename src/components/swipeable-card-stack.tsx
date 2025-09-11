@@ -5,7 +5,6 @@ import { Card } from "~/app/interface/card";
 import ScratchOff from "./scratch-off";
 import Image from "next/image";
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "~/lib/constants";
-import Bottom from "./bottom";
 
 interface SwipeableCardStackProps {
   cards: Card[];
@@ -57,6 +56,7 @@ export default function SwipeableCardStack({
   };
 
   const handleDragEnd = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _: any,
     info: { offset: { x: number }; velocity: { x: number } }
   ) => {

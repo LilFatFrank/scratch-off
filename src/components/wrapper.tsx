@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { subscribeToTable } from "~/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import Bottom from "./bottom";
+import { Card } from "~/app/interface/card";
 
 const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useContext(AppContext);
@@ -81,7 +82,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const getWinnerGif = () => winnerGifRef.current;
 
   // Helper function to filter unscratched cards
-  const getUnscratchedCards = (cards: any[]) => {
+  const getUnscratchedCards = (cards: Card[]) => {
     return cards.filter(card => !card.scratched);
   };
 
