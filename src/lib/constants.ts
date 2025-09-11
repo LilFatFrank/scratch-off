@@ -154,7 +154,8 @@ export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const CANVAS_WIDTH = 343;
 export const CANVAS_HEIGHT = 418;
 // High-DPI scaling factor for crisp rendering
-export const CANVAS_DPI_SCALE = 2;
+// Increased to 3 for even higher quality on modern displays
+export const CANVAS_DPI_SCALE = 3;
 export const SCRATCH_RADIUS = 24;
 export const APP_COLORS = {
   DEFAULT: "#7727DE",

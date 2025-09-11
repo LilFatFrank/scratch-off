@@ -70,7 +70,7 @@ const ProfilePage = () => {
   const controls = useAnimation();
 
   const handleViewAll = () => {
-    push("/");
+    push("/cards");
   };
 
   // Animate the total winnings number
@@ -100,136 +100,138 @@ const ProfilePage = () => {
   }, [controls]);
 
   return (
-    <motion.div
-      className="p-4 h-full"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Total Winnings Section */}
+    <>
       <motion.div
-        className="flex flex-col items-center justify-center gap-5 mb-8"
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="p-4 h-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        <motion.p
-          className="text-white/60 text-[16px] font-medium leading-[90%]"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-        >
-          Total Winnings
-        </motion.p>
-
+        {/* Total Winnings Section */}
         <motion.div
-          initial={{ scale: 0.5, rotateY: -90 }}
-          animate={{ scale: 1, rotateY: 0 }}
-          transition={{
-            delay: 0.5,
-            duration: 1.2,
-            ease: [0.25, 0.46, 0.45, 0.94],
-            type: "spring",
-            stiffness: 100,
-            damping: 15,
-          }}
+          className="flex flex-col items-center justify-center gap-5 mb-8"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <motion.p
-            className="text-[64px] font-medium leading-[90%] text-white font-[ABCGaisyr]"
-            style={{
-              textShadow: "0px 0px 20px rgba(255, 255, 255, 0.3)",
-            }}
-            animate={{
-              textShadow: [
-                "0px 0px 20px rgba(255, 255, 255, 0.3)",
-                "0px 0px 30px rgba(255, 255, 255, 0.5)",
-                "0px 0px 20px rgba(255, 255, 255, 0.3)",
-              ],
-            }}
+            className="text-white/60 text-[16px] font-medium leading-[90%]"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          >
+            Total Winnings
+          </motion.p>
+
+          <motion.div
+            initial={{ scale: 0.5, rotateY: -90 }}
+            animate={{ scale: 1, rotateY: 0 }}
             transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
+              delay: 0.5,
+              duration: 1.2,
+              ease: [0.25, 0.46, 0.45, 0.94],
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
             }}
           >
-            {(displayAmount || 0).toLocaleString("en-US", {
-              style: "currency",
-              currency: "USD",
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            <motion.p
+              className="text-[64px] font-medium leading-[90%] text-white font-[ABCGaisyr]"
+              style={{
+                textShadow: "0px 0px 20px rgba(255, 255, 255, 0.3)",
+              }}
+              animate={{
+                textShadow: [
+                  "0px 0px 20px rgba(255, 255, 255, 0.3)",
+                  "0px 0px 30px rgba(255, 255, 255, 0.5)",
+                  "0px 0px 20px rgba(255, 255, 255, 0.3)",
+                ],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              {(displayAmount || 0).toLocaleString("en-US", {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </motion.p>
+          </motion.div>
+        </motion.div>
+
+        <motion.div className="mb-16 flex items-center justify-center gap-2">
+          <motion.p className="text-white text-[16px] font-medium leading-[90%]">
+            Level {state.user?.current_level || 1}
+          </motion.p>
+          <motion.div
+            className="bg-white/20 rounded-full"
+            style={{ width: "3px", height: "3px" }}
+          />
+
+          {/* Circular Progress */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+          >
+            <CircularProgress
+              revealsToNextLevel={state.user?.reveals_to_next_level || 25}
+              totalRevealsForLevel={getLevelRequirement(
+                (state.user?.current_level || 1) + 1
+              )}
+            />
+          </motion.div>
+
+          <motion.p className="text-white text-[14px] font-medium leading-[90%] text-center">
+            {state.user?.reveals_to_next_level || 25} scratch offs away from
+            level {(state.user?.current_level || 1) + 1}
           </motion.p>
         </motion.div>
-      </motion.div>
 
-      <motion.div className="mb-16 flex items-center justify-center gap-2">
-        <motion.p className="text-white text-[16px] font-medium leading-[90%]">
-          Level {state.user?.current_level || 1}
-        </motion.p>
+        {/* Scratch Offs Count Section */}
         <motion.div
-          className="bg-white/20 rounded-full"
-          style={{ width: "3px", height: "3px" }}
-        />
-
-        {/* Circular Progress */}
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+          className="flex items-center w-full mb-6"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
         >
-          <CircularProgress
-            revealsToNextLevel={state.user?.reveals_to_next_level || 25}
-            totalRevealsForLevel={getLevelRequirement(
-              (state.user?.current_level || 1) + 1
-            )}
+          <motion.p
+            className="text-white/60 text-[12px] font-medium leading-[90%]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.4, duration: 0.8 }}
+          >
+            {state.user?.total_reveals || 0} SCRATCH OFFS
+          </motion.p>
+
+          {/* Animated underline */}
+          <motion.div
+            className="ml-2 h-[1px] bg-white/20"
+            initial={{ width: 0 }}
+            animate={{ width: "100px" }}
+            transition={{ delay: 1.6, duration: 0.8, ease: "easeOut" }}
           />
         </motion.div>
 
-        <motion.p className="text-white text-[14px] font-medium leading-[90%] text-center">
-          {state.user?.reveals_to_next_level || 25} scratch offs away from level{" "}
-          {(state.user?.current_level || 1) + 1}
-        </motion.p>
-      </motion.div>
-
-      {/* Scratch Offs Count Section */}
-      <motion.div
-        className="flex items-center w-full mb-6"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
-      >
-        <motion.p
-          className="text-white/60 text-[12px] font-medium leading-[90%]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.8 }}
-        >
-          {state.user?.total_reveals || 0} SCRATCH OFFS
-        </motion.p>
-
-        {/* Animated underline */}
+        {/* Card Grid with staggered animation */}
         <motion.div
-          className="ml-2 h-[1px] bg-white/20"
-          initial={{ width: 0 }}
-          animate={{ width: "100px" }}
-          transition={{ delay: 1.6, duration: 0.8, ease: "easeOut" }}
-        />
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.8, duration: 0.8 }}
+        >
+          <CardGrid
+            cards={state.cards || []}
+            showViewAll={true}
+            onCardSelect={() => {}}
+            onViewAll={handleViewAll}
+          />
+        </motion.div>
       </motion.div>
-
-      {/* Card Grid with staggered animation */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.8, duration: 0.8 }}
-      >
-        <CardGrid
-          cards={state.cards || []}
-          showViewAll={true}
-          onCardSelect={() => {}}
-          onViewAll={handleViewAll}
-        />
-      </motion.div>
-    </motion.div>
+    </>
   );
 };
 

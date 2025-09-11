@@ -29,10 +29,7 @@ export default function CardGrid({
           <motion.div
             key={card.id}
             layoutId={`card-${card.id}`}
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
             transition={{
-              delay: index * 0.1,
               layout: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
             }}
             className="cursor-pointer h-fit relative"
@@ -167,10 +164,7 @@ export default function CardGrid({
         {/* View All Overlay */}
         {hasMoreCards && (
           <motion.div
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
             transition={{
-              delay: 7 * 0.1,
               layout: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
             }}
             className="cursor-pointer h-fit relative"

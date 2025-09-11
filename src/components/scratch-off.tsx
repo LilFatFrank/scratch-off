@@ -11,6 +11,7 @@ import {
   SET_CARDS,
   SET_LEADERBOARD,
   SET_USER,
+  SET_UNSCRATCHED_CARDS,
 } from "~/app/context/actions";
 import {
   APP_COLORS,
@@ -107,39 +108,67 @@ export default function ScratchOff({
     // Set up high-DPI canvas
     const devicePixelRatio = window.devicePixelRatio || 1;
     const scale = CANVAS_DPI_SCALE * devicePixelRatio;
-    
+
     // Set the actual canvas size to the scaled dimensions
     canvas.width = CANVAS_WIDTH * scale;
     canvas.height = CANVAS_HEIGHT * scale;
-    
+
     // Scale the canvas back down using CSS
     canvas.style.width = CANVAS_WIDTH + "px";
     canvas.style.height = CANVAS_HEIGHT + "px";
-    
+
     // Scale the drawing context so everything draws at the higher resolution
     ctx.scale(scale, scale);
-    
-    // Enable image smoothing for better quality
+
+    // Enable highest quality image smoothing
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    const coverImg = new window.Image();
-    coverImg.src = "/assets/scratch-card-image.png";
-    coverImg.onload = () => {
+    // Additional quality settings for crisp rendering
+    ctx.textBaseline = "top";
+
+    // Use preloaded image from context
+    const coverImg = state.getScratchCardImage?.();
+    if (coverImg) {
       ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      // Scale the image to fill the entire canvas, removing any borders
-      ctx.drawImage(
-        coverImg,
-        0,
-        0,
-        coverImg.width,
-        coverImg.height,
-        0,
-        0,
-        CANVAS_WIDTH,
-        CANVAS_HEIGHT
-      );
-    };
+
+      // Ensure image is fully loaded before drawing
+      if (coverImg.complete && coverImg.naturalWidth > 0) {
+        // Scale the image to fill the entire canvas with highest quality
+        ctx.drawImage(
+          coverImg,
+          0,
+          0,
+          coverImg.naturalWidth,
+          coverImg.naturalHeight,
+          0,
+          0,
+          CANVAS_WIDTH,
+          CANVAS_HEIGHT
+        );
+      }
+    } else {
+      // Fallback: load image if not preloaded yet
+      const fallbackImg = new window.Image();
+      fallbackImg.crossOrigin = "anonymous";
+      fallbackImg.decoding = "sync";
+      fallbackImg.src = "/assets/scratch-card-image.png";
+      fallbackImg.onload = () => {
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        // Use natural dimensions for highest quality
+        ctx.drawImage(
+          fallbackImg,
+          0,
+          0,
+          fallbackImg.naturalWidth,
+          fallbackImg.naturalHeight,
+          0,
+          0,
+          CANVAS_WIDTH,
+          CANVAS_HEIGHT
+        );
+      };
+    }
   }, []);
 
   // Scratch logic
@@ -189,14 +218,17 @@ export default function ScratchOff({
     };
 
     const checkScratched = () => {
-      const imageData = ctx.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      // Use the actual canvas dimensions (high-DPI scaled)
+      const actualWidth = canvas.width;
+      const actualHeight = canvas.height;
+      const imageData = ctx.getImageData(0, 0, actualWidth, actualHeight);
       let transparent = 0;
       for (let i = 3; i < imageData.data.length; i += 4) {
         if (imageData.data[i] === 0) transparent++;
       }
-      const percent = (transparent / (CANVAS_WIDTH * CANVAS_HEIGHT)) * 100;
+      const percent = (transparent / (actualWidth * actualHeight)) * 100;
 
-      if (percent > 40 && !scratched && !isProcessing) {
+      if (percent > 25 && !scratched && !isProcessing) {
         setIsProcessing(true);
 
         // Use prize amount from card data directly
@@ -228,6 +260,11 @@ export default function ScratchOff({
               : card
           ),
         });
+        // Optimistically update unscratched cards - remove the scratched card
+        dispatch({
+          type: SET_UNSCRATCHED_CARDS,
+          payload: state.unscratchedCards.filter((card) => card.id !== cardData?.id),
+        });
         dispatch({
           type: SET_USER,
           payload: {
@@ -235,7 +272,8 @@ export default function ScratchOff({
             amount_won:
               (state.user?.amount_won || 0) +
               (prizeAmount < 0 ? 0 : prizeAmount),
-            total_wins: (state.user?.total_wins || 0) + 1,
+            total_wins:
+              (state.user?.total_wins || 0) + (prizeAmount > 0 ? 1 : 0),
             total_reveals: (state.user?.total_reveals || 0) + 1,
             current_level:
               getRevealsToNextLevel(state.user?.current_level || 1) === 0
@@ -264,7 +302,7 @@ export default function ScratchOff({
               pfp: state.user?.pfp,
               payment_tx: cardData?.payment_tx,
               payout_tx: null,
-              won: prizeAmount < 0 ? false : true,
+              won: prizeAmount > 0,
             },
           ],
         });
@@ -275,10 +313,11 @@ export default function ScratchOff({
               ? {
                   ...user,
                   amount_won:
-                    (state.user?.amount_won || 0) +
+                    (user.amount_won || 0) +
                     (prizeAmount < 0 ? 0 : prizeAmount),
-                  total_wins: (state.user?.total_wins || 0) + 1,
-                  total_reveals: (state.user?.total_reveals || 0) + 1,
+                  total_wins:
+                    (user.total_wins || 0) + (prizeAmount > 0 ? 1 : 0),
+                  total_reveals: (user.total_reveals || 0) + 1,
                   current_level:
                     getRevealsToNextLevel(state.user?.current_level || 1) === 0
                       ? (state.user?.current_level || 1) + 1
@@ -447,7 +486,7 @@ export default function ScratchOff({
 
   return (
     <>
-      <div className="h-full w-full flex flex-col items-center justify-center">
+      <div className="h-full w-full flex flex-col items-center  justify-center">
         <p
           className="font-[ABCGaisyr] text-center text-[30px] mb-5 font-bold italic rotate-[-4deg]"
           style={{
@@ -634,17 +673,45 @@ export default function ScratchOff({
         </div>
       </div>
       {showBlurOverlay && (
-        <div
+        <motion.div
           className="fixed inset-0 z-50 backdrop-blur-md text-white flex flex-col items-center justify-center"
           style={{ pointerEvents: "auto" }}
+          onClick={(e) => {
+            // Tap outside content to dismiss
+            if (e.target === e.currentTarget) {
+              setShowBlurOrverlay(false);
+            }
+          }}
         >
-          <Image
-            src={"/assets/winner.gif"}
-            alt="winner"
-            fill
-            className="object-cover"
-            unoptimized
-          />
+          {/* Close button */}
+          <button
+            onClick={() => setShowBlurOrverlay(false)}
+            className="absolute top-4 left-4 z-10 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+            style={{ top: "16px", left: "16px" }}
+          >
+            <Image
+              src="/assets/cross-icon.svg"
+              alt="Close"
+              width={16}
+              height={16}
+              className="filter brightness-0 invert"
+            />
+          </button>
+          {state.getWinnerGif?.() ? (
+            <img
+              src={state.getWinnerGif()?.src || "/assets/winner.gif"}
+              alt="winner"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <Image
+              src={"/assets/winner.gif"}
+              alt="winner"
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          )}
           <p className="font-[ABCGaisyr] font-bold text-center text-white text-[46px] leading-[92%] italic rotate-[-6deg]">
             {prizeAmount > 0 ? (
               <>You&apos;ve won</>
@@ -675,7 +742,7 @@ export default function ScratchOff({
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </>
   );

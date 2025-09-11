@@ -1,5 +1,23 @@
 import { Action } from "./action";
-import { SET_ACTIVITY, SET_APP_BACKGROUND, SET_APP_COLOR, SET_APP_STATS, SET_CARDS, SET_HAS_PROVIDER, SET_IS_IN_MINIAPP, SET_LEADERBOARD, SET_PLAY_WIN_SOUND, SET_PUBLIC_KEY, SET_SELECTED_CARD, SET_USER, SET_BEST_FRIENDS } from "./actions";
+import {
+  SET_ACTIVITY,
+  SET_APP_BACKGROUND,
+  SET_APP_COLOR,
+  SET_APP_STATS,
+  SET_CARDS,
+  SET_HAS_PROVIDER,
+  SET_IS_IN_MINIAPP,
+  SET_LEADERBOARD,
+  SET_PLAY_WIN_SOUND,
+  SET_PUBLIC_KEY,
+  SET_SELECTED_CARD,
+  SET_USER,
+  SET_BEST_FRIENDS,
+  SET_GET_SCRATCH_CARD_IMAGE,
+  SET_GET_WINNER_GIF,
+  SET_SWIPABLE_MODE,
+  SET_UNSCRATCHED_CARDS,
+} from "./actions";
 import { AppState } from "./state";
 
 const reducer = (state: AppState, action: Action): AppState => {
@@ -17,58 +35,78 @@ const reducer = (state: AppState, action: Action): AppState => {
     case SET_HAS_PROVIDER:
       return {
         ...state,
-        hasProvider: action.payload
-      }
+        hasProvider: action.payload,
+      };
     case SET_PUBLIC_KEY:
       return {
         ...state,
-        publicKey: action.payload
-      }
+        publicKey: action.payload,
+      };
     case SET_USER:
       return {
         ...state,
-        user: action.payload
-      }
+        user: action.payload,
+      };
     case SET_IS_IN_MINIAPP:
       return {
         ...state,
-        isInMiniApp: action.payload
-      } 
+        isInMiniApp: action.payload,
+      };
     case SET_SELECTED_CARD:
       return {
         ...state,
-        selectedCard: action.payload
-      }
+        selectedCard: action.payload,
+      };
     case SET_CARDS:
       return {
         ...state,
-        cards: action.payload
-      }
+        cards: action.payload,
+      };
     case SET_LEADERBOARD:
       return {
         ...state,
-        leaderboard: action.payload
-      }
+        leaderboard: action.payload,
+      };
     case SET_ACTIVITY:
       return {
         ...state,
-        activity: action.payload
-      }
+        activity: action.payload,
+      };
     case SET_APP_STATS:
       return {
         ...state,
-        appStats: action.payload
-      }
+        appStats: action.payload,
+      };
     case SET_PLAY_WIN_SOUND:
       return {
         ...state,
-        playWinSound: action.payload
-      }
+        playWinSound: action.payload,
+      };
+    case SET_GET_SCRATCH_CARD_IMAGE:
+      return {
+        ...state,
+        getScratchCardImage: action.payload,
+      };
+    case SET_GET_WINNER_GIF:
+      return {
+        ...state,
+        getWinnerGif: action.payload,
+      };
     case SET_BEST_FRIENDS:
       return {
         ...state,
-        bestFriends: action.payload
-      }
+        bestFriends: action.payload,
+      };
+    case SET_SWIPABLE_MODE:
+      return {
+        ...state,
+        swipableMode: action.payload,
+      };
+    case SET_UNSCRATCHED_CARDS:
+      return {
+        ...state,
+        unscratchedCards: action.payload,
+      };
     default:
       return state;
   }

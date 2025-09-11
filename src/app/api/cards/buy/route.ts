@@ -117,8 +117,6 @@ async function verifyPayment(
 export async function POST(request: NextRequest) {
   try {
     const { userWallet, paymentTx, numberOfCards, friends } = await request.json();
-
-    console.log("Friends:", friends);
     
     if (!userWallet || !paymentTx || !numberOfCards) {
       return NextResponse.json(

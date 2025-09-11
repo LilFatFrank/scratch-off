@@ -108,7 +108,7 @@ const LeaderboardPage = () => {
     if (tabId === activeTab) return;
 
     const direction = tabId === "activity" ? -1 : 1;
-    
+
     await controls.start({ x: `${direction * 100}%`, opacity: 0 });
     setActiveTab(tabId);
     await controls.start({ x: `${-direction * 100}%`, opacity: 0 });
@@ -116,33 +116,39 @@ const LeaderboardPage = () => {
   };
 
   return (
-    <div className="p-4 h-full">
-      {/* Tab Navigation */}
-      <div className="max-w-[222px] mx-auto">
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={handleTabChange} />
-      </div>
-      
-      {/* Swipeable Content */}
-      <motion.div 
-        className="w-full relative overflow-y-auto h-[92%]"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.1}
-        onDragEnd={handleDragEnd}
-        animate={controls}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
+    <>
+      <div className="p-4 h-full">
+        {/* Tab Navigation */}
+        <div className="max-w-[222px] mx-auto">
+          <Tabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+
+        {/* Swipeable Content */}
         <motion.div
-          className="w-full"
-          initial={{ x: 0, opacity: 1 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="w-full relative overflow-y-auto h-[92%]"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.1}
+          onDragEnd={handleDragEnd}
+          animate={controls}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          {activeTab === "leaderboard" && <Leaderboard />}
-          {activeTab === "activity" && <Activity />}
+          <motion.div
+            className="w-full"
+            initial={{ x: 0, opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            {activeTab === "leaderboard" && <Leaderboard />}
+            {activeTab === "activity" && <Activity />}
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 
