@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
       // Check if user leveled up
       if (newRevealsToNext <= 0) {
         newLevel = currentLevel + 1;
-        newRevealsToNextLevel = getRevealsToNextLevel(newLevel);
         freeCardsToAward = newLevel - 1; // Award free cards for new level
+        newRevealsToNextLevel = getRevealsToNextLevel(newLevel);
         leveledUp = true;
       }
     }

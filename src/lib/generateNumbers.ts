@@ -24,8 +24,6 @@ export function generateNumbers(params: {
     friends = [], // Default to empty array
   } = params;
 
-  console.log("Friends in generateNumbers:", friends);
-
   const total = 12; // 3 cols x 4 rows
   const cells: CardCell[] = new Array(total);
 

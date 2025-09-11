@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { FC, useContext, useEffect, useState } from "react";
-import { SET_CARDS, SET_UNSCRATCHED_CARDS } from "~/app/context/actions";
+import { SET_CARDS } from "~/app/context/actions";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { useMiniApp } from "@neynar/react";
 import sdk from "@farcaster/miniapp-sdk";
@@ -91,10 +91,6 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             const userCards = await fetchUserCards(state.publicKey);
             if (userCards) {
               dispatch({ type: SET_CARDS, payload: userCards });
-              dispatch({
-                type: SET_UNSCRATCHED_CARDS,
-                payload: userCards.filter((card) => !card.scratched),
-              });
             }
           } catch (error) {
             console.error("Failed to refetch cards after purchase:", error);

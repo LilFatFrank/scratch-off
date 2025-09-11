@@ -17,6 +17,7 @@ import {
   SET_GET_WINNER_GIF,
   SET_SWIPABLE_MODE,
   SET_UNSCRATCHED_CARDS,
+  SET_REFETCH_USER_CARDS,
 } from "./actions";
 import { AppState } from "./state";
 
@@ -106,6 +107,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         unscratchedCards: action.payload,
+      };
+    case SET_REFETCH_USER_CARDS:
+      return {
+        ...state,
+        refetchUserCards: action.payload,
       };
     default:
       return state;

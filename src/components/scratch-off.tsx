@@ -11,7 +11,6 @@ import {
   SET_CARDS,
   SET_LEADERBOARD,
   SET_USER,
-  SET_UNSCRATCHED_CARDS,
 } from "~/app/context/actions";
 import {
   APP_COLORS,
@@ -264,13 +263,6 @@ export default function ScratchOff({
               : card
           ),
         });
-        // Optimistically update unscratched cards - remove the scratched card
-        dispatch({
-          type: SET_UNSCRATCHED_CARDS,
-          payload: state.unscratchedCards.filter(
-            (card) => card.id !== cardData?.id
-          ),
-        });
         dispatch({
           type: SET_USER,
           payload: {
@@ -397,6 +389,13 @@ export default function ScratchOff({
               setPrizeAmount(pa);
               if (processData.success) {
                 onPrizeRevealed?.(prizeAmount);
+                
+                // If user leveled up and got free cards, refetch user cards
+                if (processData.leveledUp && processData.freeCardsAwarded > 0) {
+                  setTimeout(() => {
+                    state.refetchUserCards?.();
+                  }, 1000); // Wait 1 second for database to be fully updated
+                }
               }
             })
             .catch((error) => {

@@ -5,6 +5,7 @@ import { chunk3, findWinningRow } from "~/lib/winningRow";
 import { formatCell } from "~/lib/formatCell";
 import { Card } from "~/app/interface/card";
 import { USDC_ADDRESS } from "~/lib/constants";
+import { useRouter } from "next/navigation";
 
 interface CardGridProps {
   cards: Card[];
@@ -21,6 +22,7 @@ export default function CardGrid({
 }: CardGridProps) {
   const displayCards = showViewAll ? cards.slice(0, 7) : cards;
   const hasMoreCards = showViewAll && cards.length > 7;
+  const { push } = useRouter();
 
   return (
     <div className="w-full">
@@ -36,7 +38,7 @@ export default function CardGrid({
             style={{
               opacity: !card.scratched || (card.scratched && card.prize_amount !== 0) ? 1 : 0.35,
             }}
-            onClick={() => onCardSelect(card)}
+            onClick={showViewAll && !card.scratched ? () => push("/") : () => onCardSelect(card)}
           >
             <motion.div
               whileHover={{ scale: 1.05 }}

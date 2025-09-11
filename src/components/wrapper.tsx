@@ -14,6 +14,7 @@ import {
   SET_GET_WINNER_GIF,
   SET_BEST_FRIENDS,
   SET_UNSCRATCHED_CARDS,
+  SET_REFETCH_USER_CARDS,
 } from "~/app/context/actions";
 import sdk from "@farcaster/miniapp-sdk";
 import {
@@ -41,7 +42,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentUnscratchedCardsRef = useRef(state.unscratchedCards);
   const { push } = useRouter();
   const pathname = usePathname();
-  
+
   // Audio for win sounds - load once and reuse
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -88,6 +89,22 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
     return cards.filter(card => !card.scratched);
   };
 
+  // Refetch function for user cards
+  const refetchUserCards = async () => {
+    if (!state.publicKey) return;
+    
+    try {
+      const { fetchUserCards } = await import("~/lib/userapis");
+      const userCards = await fetchUserCards(state.publicKey);
+      if (userCards) {
+        dispatch({ type: SET_CARDS, payload: userCards });
+        dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(userCards) });
+      }
+    } catch (error) {
+      console.error("Failed to refetch user cards:", error);
+    }
+  };
+
   // Set functions in context
   useEffect(() => {
     dispatch({ type: SET_PLAY_WIN_SOUND, payload: playWinSound });
@@ -96,11 +113,13 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       payload: getScratchCardImage,
     });
     dispatch({ type: SET_GET_WINNER_GIF, payload: getWinnerGif });
+    dispatch({ type: SET_REFETCH_USER_CARDS, payload: refetchUserCards });
   }, []);
 
   // Keep ref updated with current cards
   useEffect(() => {
     currentCardsRef.current = state.cards;
+    dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(state.cards) });
   }, [state.cards]);
 
   // Keep ref updated with current leaderboard
@@ -145,7 +164,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
       if (userCards.status === "fulfilled") {
         dispatch({ type: SET_CARDS, payload: userCards.value });
-        dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(userCards.value) });
       }
       if (userInfo.status === "fulfilled") {
         dispatch({ type: SET_USER, payload: userInfo.value });
@@ -198,29 +216,12 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
         (payload) => {
           // Only handle cards for the current user
           if (payload.new && payload.new.user_wallet === state.publicKey) {
-            if (payload.eventType === "INSERT") {
-              // Scenario 1: New card is added
-              // Handle both single card and multiple cards
-              const newCard = payload.new;
-              const existingCards = currentCardsRef.current;
-              
-              // Check if this card already exists to avoid duplicates
-              const cardExists = existingCards.some(card => card.id === newCard.id);
-              if (!cardExists) {
-                const updatedCards = [newCard, ...existingCards];
-                dispatch({
-                  type: SET_CARDS,
-                  payload: updatedCards,
-                });
-                dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(updatedCards) });
-              }
-            } else if (payload.eventType === "UPDATE") {
+            if (payload.eventType === "UPDATE") {
               // Scenario 2: Card is updated (revealed)
               const updatedCards = currentCardsRef.current.map((card) =>
                 card.id === payload.new.id ? payload.new : card
               );
               dispatch({ type: SET_CARDS, payload: updatedCards });
-              dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(updatedCards) });
             }
           }
         },

@@ -22,6 +22,7 @@ export interface AppState {
   swipableMode: boolean;
   bestFriends: BestFriend[] | [];
   unscratchedCards: Card[] | [];
+  refetchUserCards: (() => Promise<void>) | null;
 }
 
 const initialState: AppState = {
@@ -42,6 +43,7 @@ const initialState: AppState = {
   swipableMode: false,
   bestFriends: [],
   unscratchedCards: [],
+  refetchUserCards: null,
 };
 
 export default initialState;
