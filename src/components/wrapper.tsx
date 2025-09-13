@@ -29,7 +29,6 @@ import { subscribeToTable } from "~/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import Bottom from "./bottom";
 import { Card } from "~/app/interface/card";
-import { usePathname } from "next/navigation";
 
 const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useContext(AppContext);
@@ -40,7 +39,6 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentActivityRef = useRef(state.activity);
   const currentUnscratchedCardsRef = useRef(state.unscratchedCards);
   const { push } = useRouter();
-  const pathname = usePathname();
 
   // Audio for win sounds - load once and reuse
   const winAudioRef = useRef<HTMLAudioElement | null>(null);

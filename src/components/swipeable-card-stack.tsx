@@ -55,29 +55,6 @@ export default function SwipeableCardStack({
     setTilt({ x: 0, y: 0 });
   };
 
-  const handleDragEnd = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _: any,
-    info: { offset: { x: number }; velocity: { x: number } }
-  ) => {
-    const offsetX = info.offset.x;
-    const velocityX = info.velocity.x;
-    const threshold = 90;
-
-    if ((offsetX > threshold || velocityX > 500) && canGoPrev) {
-      setDirection(-1); // Swipe right = go to previous card
-      const prevCard = cards[currentIndex - 1];
-      if (prevCard) setCurrentCardNo(prevCard.card_no);
-      return;
-    }
-    if ((offsetX < -threshold || velocityX < -500) && canGoNext) {
-      setDirection(1); // Swipe left = go to next card
-      const nextCard = cards[currentIndex + 1];
-      if (nextCard) setCurrentCardNo(nextCard.card_no);
-      return;
-    }
-  };
-
   // Ensure currentIndex is within bounds
   const safeIndex = Math.max(0, Math.min(currentIndex, cards.length - 1));
   const prev = canGoPrev ? cards[safeIndex - 1] : null;
