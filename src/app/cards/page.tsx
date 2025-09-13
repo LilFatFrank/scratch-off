@@ -32,7 +32,7 @@ export default function Home() {
             <div 
               className="absolute bottom-[-1px] left-0 right-0 h-12 pointer-events-none z-[31]"
               style={{
-                background: 'linear-gradient(transparent, rgb(96 34 176) 75%)'
+                background: 'linear-gradient(transparent, rgb(94 32 174) 75%)'
               }}
             />
           </motion.div>
