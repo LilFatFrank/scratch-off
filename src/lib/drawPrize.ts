@@ -1,7 +1,6 @@
 // Prize calculation function (same as process-prize)
 export function drawPrize(): number {
   const r = Math.random() * 100; // 0.000 … 99.999
-  console.log("Prize calculation random:", r);
 
   if (r < 30) return 0; // 35 % lose
   if (r < 40) return -1; // +10 % friend win

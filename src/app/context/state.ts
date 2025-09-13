@@ -22,6 +22,7 @@ export interface AppState {
   bestFriends: BestFriend[] | [];
   unscratchedCards: Card[] | [];
   refetchUserCards: (() => Promise<void>) | null;
+  buyCards: (() => void) | null;
 }
 
 const initialState: AppState = {
@@ -42,6 +43,7 @@ const initialState: AppState = {
   bestFriends: [],
   unscratchedCards: [],
   refetchUserCards: null,
+  buyCards: null,
 };
 
 export default initialState;

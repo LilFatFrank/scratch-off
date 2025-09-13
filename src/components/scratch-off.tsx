@@ -207,7 +207,7 @@ export default function ScratchOff({
       }
       const percent = (transparent / (actualWidth * actualHeight)) * 100;
 
-      if (percent > 25 && !scratched && !isProcessing) {
+      if (percent > 40 && !scratched && !isProcessing) {
         setIsProcessing(true);
 
         // Use prize amount from card data directly
@@ -365,7 +365,7 @@ export default function ScratchOff({
               setPrizeAmount(pa);
               if (processData.success) {
                 onPrizeRevealed?.(prizeAmount);
-                
+
                 // If user leveled up and got free cards, refetch user cards
                 if (processData.leveledUp && processData.freeCardsAwarded > 0) {
                   setTimeout(() => {
@@ -469,7 +469,7 @@ export default function ScratchOff({
     <>
       <div className="h-full w-full flex flex-col items-center  justify-center">
         <p
-          className="font-[ABCGaisyr] text-center text-[30px] mb-5 font-bold italic rotate-[-4deg]"
+          className="font-[ABCGaisyr] text-center text-[30px] mb-1 font-bold italic rotate-[-4deg]"
           style={{
             visibility: cardData?.scratched || scratched ? "visible" : "hidden",
             color:
@@ -478,7 +478,7 @@ export default function ScratchOff({
                 : "rgba(255, 255, 255, 0.4)",
             textShadow:
               cardData?.prize_amount || prizeAmount
-                ? "0px 0px 3.91px #00A34F, 0px 0px 7.82px #00A34F, 0px 0px 27.38px #00A34F, 0px 0px 54.76px #00A34F, 0px 0px 93.88px #00A34F, 0px 0px 164.29px #00A34F"
+                ? "0px 0px 1px #00A34F, 0px 0px 2px #00A34F, 0px 0px 6px #00A34F, 0px 0px 12px #00A34F"
                 : "none",
           }}
         >
@@ -710,11 +710,11 @@ export default function ScratchOff({
               </>
             ) : null}
           </p>
-          <div className="absolute w-[90%] bottom-[48px] flex flex-col items-center justify-center gap-4">
+          <div className="absolute w-[90%] bottom-[36px] flex flex-col items-center justify-center gap-4">
             <div className="w-full p-1 rounded-[40px] border border-white">
               <button
                 onClick={handleShare}
-                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
                 style={{
                   color: APP_COLORS.WON,
                 }}
@@ -726,12 +726,26 @@ export default function ScratchOff({
               <div className="w-full p-1 rounded-[40px] border border-white">
                 <button
                   onClick={onNext}
-                  className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                  className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
                   style={{
                     color: APP_COLORS.WON,
                   }}
                 >
                   Next Card
+                </button>
+              </div>
+            ) : state.buyCards ? (
+              <div className="w-full p-1 rounded-[40px] border border-white">
+                <button
+                  onClick={() => {
+                    state.buyCards?.();
+                  }}
+                  className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
+                  style={{
+                    color: APP_COLORS.WON,
+                  }}
+                >
+                  Buy Cards
                 </button>
               </div>
             ) : null}

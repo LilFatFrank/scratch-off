@@ -120,7 +120,7 @@ export default function SwipeableCardStack({
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={currentCardNo}
-            className="relative z-10"
+            className="relative z-10 w-full"
             initial={{
               opacity: 0,
               x: direction * 100, // Enter from the opposite direction of swipe
@@ -138,74 +138,32 @@ export default function SwipeableCardStack({
             }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
           >
-            {/* Swipe areas - 20% on each side */}
+            {/* Click areas - 15% on each side */}
             <div
-              className="absolute left-0 top-0 w-[20%] h-full z-20 cursor-grab active:cursor-grabbing"
-              onPointerDown={(e) => {
+              className="absolute left-0 top-0 w-[20%] h-full z-20 cursor-pointer hover:bg-black/5 transition-colors"
+              onClick={(e) => {
                 e.stopPropagation();
-                const startX = e.clientX;
-                const startY = e.clientY;
-
-                const handleMove = (moveEvent: PointerEvent) => {
-                  const deltaX = moveEvent.clientX - startX;
-                  const deltaY = moveEvent.clientY - startY;
-
-                  // Only trigger swipe if horizontal movement is greater than vertical
-                  if (
-                    Math.abs(deltaX) > Math.abs(deltaY) &&
-                    Math.abs(deltaX) > 10
-                  ) {
-                    handleDragEnd(null, {
-                      offset: { x: deltaX },
-                      velocity: { x: deltaX * 10 },
-                    });
-                  }
-                };
-
-                const handleUp = () => {
-                  document.removeEventListener("pointermove", handleMove);
-                  document.removeEventListener("pointerup", handleUp);
-                };
-
-                document.addEventListener("pointermove", handleMove);
-                document.addEventListener("pointerup", handleUp);
+                if (canGoPrev) {
+                  setDirection(-1);
+                  const prevCard = cards[currentIndex - 1];
+                  if (prevCard) setCurrentCardNo(prevCard.card_no);
+                }
               }}
             />
 
             <div
-              className="absolute right-0 top-0 w-[20%] h-full z-20 cursor-grab active:cursor-grabbing"
-              onPointerDown={(e) => {
+              className="absolute right-0 top-0 w-[20%] h-full z-20 cursor-pointer hover:bg-black/5 transition-colors"
+              onClick={(e) => {
                 e.stopPropagation();
-                const startX = e.clientX;
-                const startY = e.clientY;
-
-                const handleMove = (moveEvent: PointerEvent) => {
-                  const deltaX = moveEvent.clientX - startX;
-                  const deltaY = moveEvent.clientY - startY;
-
-                  // Only trigger swipe if horizontal movement is greater than vertical
-                  if (
-                    Math.abs(deltaX) > Math.abs(deltaY) &&
-                    Math.abs(deltaX) > 10
-                  ) {
-                    handleDragEnd(null, {
-                      offset: { x: deltaX },
-                      velocity: { x: deltaX * 10 },
-                    });
-                  }
-                };
-
-                const handleUp = () => {
-                  document.removeEventListener("pointermove", handleMove);
-                  document.removeEventListener("pointerup", handleUp);
-                };
-
-                document.addEventListener("pointermove", handleMove);
-                document.addEventListener("pointerup", handleUp);
+                if (canGoNext) {
+                  setDirection(1);
+                  const nextCard = cards[currentIndex + 1];
+                  if (nextCard) setCurrentCardNo(nextCard.card_no);
+                }
               }}
             />
 
-            {/* Center 70% for scratching */}
+            {/* Center 60% for scratching */}
             <div className="w-full h-[auto]">
               {cards.length ? (
                 <ScratchOff
@@ -225,7 +183,7 @@ export default function SwipeableCardStack({
                   <motion.div
                     key="empty-state"
                     ref={cardRef}
-                    className="relative"
+                    className="relative flex items-center justify-center"
                     initial={{ opacity: 0, scale: 0.8, y: 20 }}
                     animate={{
                       opacity: 1,
@@ -243,7 +201,7 @@ export default function SwipeableCardStack({
                     }}
                     style={{
                       perspective: 1000,
-                      marginTop: 64,
+                      marginTop: 48,
                     }}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}

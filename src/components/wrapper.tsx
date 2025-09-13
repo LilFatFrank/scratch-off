@@ -201,8 +201,12 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       const cardsSub = subscribeToTable(
         "cards",
         (payload) => {
+          console.log("payload", payload);
           // Only handle cards for the current user
           if (payload.new && payload.new.user_wallet === state.publicKey) {
+            if (payload.eventType === "INSERT") {
+              dispatch({ type: SET_CARDS, payload: [payload.new, ...currentCardsRef.current] });
+            }
             if (payload.eventType === "UPDATE") {
               // Scenario 2: Card is updated (revealed)
               const updatedCards = currentCardsRef.current.map((card) =>
@@ -348,7 +352,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       className="h-[100dvh] transition-all ease-in-out duration-300"
       style={{ background: state.appBackground }}
     >
-      <div className="h-full max-w-[400px] flex flex-col mx-auto">
+      <div className="h-full max-w-[400px] flex flex-col mx-auto items-center justify-between">
         {/* Top Section - Header */}
         <motion.div
           className="flex items-center justify-between w-full px-4 pt-4 pb-2"
@@ -429,6 +433,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
               ease: "easeOut",
               delay: 0.4,
             }}
+            onClick={() => push("/")}
           >
             <span className="text-[16px] leading-[90%] font-medium text-white/40">
               Prize Pool
@@ -462,7 +467,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
           </motion.button>
         </motion.div>
         {/* Middle Section - (Scrollable) */}
-        <div className="flex flex-col w-full" style={{ height: pathname === "/" ? "80%" : "70%" }}>
+        <div className="flex flex-col w-full" style={{ height: "68%" }}>
           <div className="flex-1 h-full">{children}</div>
         </div>
         {/* Bottom Section - Bottom */}

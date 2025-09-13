@@ -88,8 +88,6 @@ async function verifyPayment(
       // Amount is in the data field (32 bytes)
       const amountHex = transferEvent.data;
       const amount = parseInt(amountHex, 16) / 1e6; // Convert from smallest units to USDC
-
-      console.log("Amount received:", amount, "Expected:", expectedAmount);
       
       // Verify the amount (allow for small rounding differences)
       return Math.abs(amount - expectedAmount) <= tolerance;

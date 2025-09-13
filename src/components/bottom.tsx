@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { FC, useContext, useEffect, useState } from "react";
-import { SET_CARDS } from "~/app/context/actions";
+import { SET_CARDS, SET_BUY_CARDS } from "~/app/context/actions";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { useMiniApp } from "@neynar/react";
 import sdk from "@farcaster/miniapp-sdk";
@@ -113,6 +113,16 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
     }
   };
 
+  // Function to trigger buy modal - can be called from other components
+  const triggerBuyModal = () => {
+    setShowBuyModal(true);
+  };
+
+  // Set the buy function in the app context so other components can access it
+  useEffect(() => {
+    dispatch({ type: SET_BUY_CARDS, payload: triggerBuyModal });
+  }, [dispatch]);
+
   useEffect(() => {
     if (mode === "swipeable") {
       // In swipeable mode, show big buy when no unscratched cards left
@@ -124,7 +134,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
     <>
       {/* Bottom Section - Controls */}
       <motion.div
-        className="flex flex-col items-center justify-center gap-6 p-4 w-full flex-shrink-0 z-0"
+        className="flex flex-col items-center justify-center gap-4 p-4 pb-9 w-full flex-shrink-0 z-0"
         initial={{ opacity: 0, y: 20 }}
         animate={{
           opacity: 1,
@@ -186,7 +196,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
           </motion.div>
           <motion.button
             className="border border-[#fff] rounded-[8px] p-[10px]"
-            onClick={() => setShowBuyModal(true)}
+            onClick={showBigBuy && pathname === "/" ? () => push("/leaderboard") : () => setShowBuyModal(true)}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -199,7 +209,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             }}
           >
             <p className="text-[14px] leading-[90%] font-medium text-[#fff]">
-              Buy
+              {showBigBuy && pathname === "/" ? "View Leaderboard" : "Buy"}
             </p>
           </motion.button>
         </motion.div>
@@ -220,7 +230,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             >
               <motion.button
                 onClick={() => setShowBuyModal(true)}
-                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
                 style={{
                   color: state.appColor,
                 }}
@@ -249,14 +259,14 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             >
               <motion.button
                 onClick={() => push("/")}
-                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white transition-colors"
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
                 style={{
                   color: state.appColor,
                 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ duration: 0.1 }}
               >
-                Scratch Off
+                View Cards
               </motion.button>
             </motion.div>
           )}
@@ -266,7 +276,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
       <AnimatePresence>
         {showBuyModal && (
           <motion.div
-            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[92%] max-w-[400px] rounded-[24px] p-6 z-[54]"
+            className="fixed bg-black/80 backdrop-blur-sm bottom-0 left-1/2 !translate-x-[-50%] !translate-y-[-16px] w-[96%] max-w-[400px] rounded-[24px] p-6 z-[54]"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -346,7 +356,7 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
                 </div>
               </div>
               <button
-                className="w-full h-[48px] text-black font-semibold text-[14px] leading-[90%] rounded-[40px] shadow-lg shadow-gray-600/50 bg-white disabled:bg-white/80 disabled:cursor-not-allowed"
+                className="w-full h-[44px] text-black font-semibold text-[14px] leading-[90%] rounded-[40px] shadow-lg shadow-gray-600/50 bg-white disabled:bg-white/80 disabled:cursor-not-allowed"
                 onClick={() => buyCards(numBuyCards)}
                 disabled={buyingCards}
               >

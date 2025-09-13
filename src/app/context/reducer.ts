@@ -17,6 +17,7 @@ import {
   SET_SWIPABLE_MODE,
   SET_UNSCRATCHED_CARDS,
   SET_REFETCH_USER_CARDS,
+  SET_BUY_CARDS,
 } from "./actions";
 import { AppState } from "./state";
 
@@ -106,6 +107,11 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         refetchUserCards: action.payload,
+      };
+    case SET_BUY_CARDS:
+      return {
+        ...state,
+        buyCards: action.payload,
       };
     default:
       return state;
