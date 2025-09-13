@@ -47,7 +47,10 @@ export default function CardGrid({
             >
               {card.scratched ? (
                 <div
-                  className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 rounded-lg z-30 flex items-center justify-center font-bold text-center text-white`}
+                  className={`absolute rotate-[-4deg] font-[ABCGaisyr] text-[28px] inset-0 rounded-lg z-30 flex items-center justify-center font-bold text-center bg-[#000]/20 text-white`}
+                  style={{
+                    textShadow: "0px 0px 1px rgba(0, 0, 0, 0.15), 0px 0px 2px rgba(0, 0, 0, 0.15), 0px 0px 6px rgba(0, 0, 0, 0.15)",
+                  }}
                 >
                   {card.prize_amount > 0 ? `${formatCell(card.prize_amount, card.prize_asset_contract || USDC_ADDRESS)}` : ""}
                 </div>
