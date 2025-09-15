@@ -469,7 +469,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="flex-1 h-full">{children}</div>
         </div>
         {/* Bottom Section - Bottom */}
-        <Bottom mode={state.swipableMode ? "swipeable" : "normal"} />
+        <Bottom mode={state.swipableMode ? "swipeable" : "normal"} loading={loading} />
       </div>
     </div>
   );

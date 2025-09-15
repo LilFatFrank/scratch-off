@@ -23,6 +23,8 @@ export interface AppState {
   unscratchedCards: Card[] | [];
   refetchUserCards: (() => Promise<void>) | null;
   buyCards: (() => void) | null;
+  currentCardIndex: number;
+  nextCard: (() => void) | null;
 }
 
 const initialState: AppState = {
@@ -44,6 +46,8 @@ const initialState: AppState = {
   unscratchedCards: [],
   refetchUserCards: null,
   buyCards: null,
+  currentCardIndex: 0,
+  nextCard: null,
 };
 
 export default initialState;

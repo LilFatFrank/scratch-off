@@ -1,10 +1,12 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "~/app/interface/card";
 import ScratchOff from "./scratch-off";
 import Image from "next/image";
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "~/lib/constants";
+import { AppContext } from "~/app/context";
+import { SET_CURRENT_CARD_INDEX, SET_NEXT_CARD } from "~/app/context/actions";
 
 interface SwipeableCardStackProps {
   cards: Card[];
@@ -15,6 +17,7 @@ export default function SwipeableCardStack({
   cards,
   initialIndex = 0,
 }: SwipeableCardStackProps) {
+  const [state, dispatch] = useContext(AppContext);
   const [currentCardNo, setCurrentCardNo] = useState<number | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -36,6 +39,20 @@ export default function SwipeableCardStack({
 
   const canGoPrev = currentIndex > 0;
   const canGoNext = currentIndex < cards.length - 1;
+
+  // Set up next card function and update current card index
+  useEffect(() => {
+    const nextCardFunction = () => {
+      if (canGoNext) {
+        setDirection(1);
+        const nextCard = cards[currentIndex + 1];
+        if (nextCard) setCurrentCardNo(nextCard.card_no);
+      }
+    };
+
+    dispatch({ type: SET_NEXT_CARD, payload: nextCardFunction });
+    dispatch({ type: SET_CURRENT_CARD_INDEX, payload: currentIndex });
+  }, [canGoNext, currentIndex, cards, dispatch]);
 
   // Mouse handlers for card tilt
   const handleMouseMove = (e: React.MouseEvent) => {

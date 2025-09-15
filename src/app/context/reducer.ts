@@ -18,6 +18,8 @@ import {
   SET_UNSCRATCHED_CARDS,
   SET_REFETCH_USER_CARDS,
   SET_BUY_CARDS,
+  SET_CURRENT_CARD_INDEX,
+  SET_NEXT_CARD,
 } from "./actions";
 import { AppState } from "./state";
 
@@ -112,6 +114,16 @@ const reducer = (state: AppState, action: Action): AppState => {
       return {
         ...state,
         buyCards: action.payload,
+      };
+    case SET_CURRENT_CARD_INDEX:
+      return {
+        ...state,
+        currentCardIndex: action.payload,
+      };
+    case SET_NEXT_CARD:
+      return {
+        ...state,
+        nextCard: action.payload,
       };
     default:
       return state;

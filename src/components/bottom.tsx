@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { FC, useContext, useEffect, useState } from "react";
-import { SET_CARDS, SET_BUY_CARDS } from "~/app/context/actions";
+import { SET_CARDS, SET_BUY_CARDS, SET_CURRENT_CARD_INDEX, SET_NEXT_CARD } from "~/app/context/actions";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { useMiniApp } from "@neynar/react";
 import sdk from "@farcaster/miniapp-sdk";
 import { USDC_ADDRESS } from "~/lib/constants";
 import { usePathname, useRouter } from "next/navigation";
 
-const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
+const Bottom: FC<{ mode?: "swipeable" | "normal"; loading?: boolean }> = ({ mode = "normal", loading = false }) => {
   const [state, dispatch] = useContext(AppContext);
   const [showBigBuy, setShowBigBuy] = useState(false);
   const [numBuyCards, setNumBuyCards] = useState(5);
@@ -137,8 +137,8 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
         className="flex flex-col items-center justify-center gap-4 p-4 pb-9 w-full flex-shrink-0 z-0"
         initial={{ opacity: 0, y: 20 }}
         animate={{
-          opacity: 1,
-          y: 0,
+          opacity: loading ? 0 : 1,
+          y: loading ? 20 : 0,
         }}
         transition={{
           duration: 0.6,
@@ -150,8 +150,8 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
           className="flex items-center justify-center gap-3"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{
-            opacity: 1,
-            scale: 1,
+            opacity: loading ? 0 : 1,
+            scale: loading ? 0.8 : 1,
           }}
           transition={{
             duration: 0.4,
@@ -163,8 +163,8 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             className="border border-[#fff]/10 rounded-[8px] p-[10px]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
-              opacity: 1,
-              scale: 1,
+              opacity: loading ? 0 : 1,
+              scale: loading ? 0.8 : 1,
             }}
             transition={{
               duration: 0.4,
@@ -199,8 +199,8 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             onClick={showBigBuy && pathname === "/" ? () => push("/leaderboard") : () => setShowBuyModal(true)}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
-              opacity: 1,
-              scale: 1,
+              opacity: loading ? 0 : 1,
+              scale: loading ? 0.8 : 1,
             }}
             transition={{
               duration: 0.4,
@@ -213,6 +213,36 @@ const Bottom: FC<{ mode?: "swipeable" | "normal" }> = ({ mode = "normal" }) => {
             </p>
           </motion.button>
         </motion.div>
+
+        {/* Next Card Button - Only show on home page when there's a next card */}
+        <AnimatePresence>
+          {pathname === "/" && mode === "swipeable" && state.currentCardIndex < state.unscratchedCards.length - 1 && (
+            <motion.div
+              className="w-full p-1 rounded-[40px] border border-white"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 25,
+                duration: 0.4,
+              }}
+            >
+              <motion.button
+                onClick={() => state.nextCard?.()}
+                className="w-full py-2 bg-white/80 rounded-[40px] font-semibold text-[14px] hover:bg-white h-11 transition-colors"
+                style={{
+                  color: state.appColor,
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.1 }}
+              >
+                Next Card
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {showBigBuy && pathname === "/" && (
