@@ -17,7 +17,7 @@ export default function SwipeableCardStack({
   cards,
   initialIndex = 0,
 }: SwipeableCardStackProps) {
-  const [state, dispatch] = useContext(AppContext);
+  const [, dispatch] = useContext(AppContext);
   const [currentCardNo, setCurrentCardNo] = useState<number | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });

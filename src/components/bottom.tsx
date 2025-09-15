@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { AppContext } from "~/app/context";
 import { FC, useContext, useEffect, useState } from "react";
-import { SET_CARDS, SET_BUY_CARDS, SET_CURRENT_CARD_INDEX, SET_NEXT_CARD } from "~/app/context/actions";
+import { SET_CARDS, SET_BUY_CARDS } from "~/app/context/actions";
 import { encodeFunctionData, erc20Abi, parseUnits } from "viem";
 import { useMiniApp } from "@neynar/react";
 import sdk from "@farcaster/miniapp-sdk";
