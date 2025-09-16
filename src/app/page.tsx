@@ -41,7 +41,7 @@ export default function Home() {
         return [...updatedCards, ...newCards];
       });
     }
-  }, [state.unscratchedCards, localCards.length]);
+  }, [state.unscratchedCards]);
 
   return (
     <>

@@ -239,7 +239,7 @@ export default function SwipeableCardStack({
                           display: "block",
                           userSelect: "none",
                           pointerEvents: "none",
-                          opacity: 0.75,
+                          opacity: 0.5,
                         }}
                       />
                     </motion.div>

@@ -14,6 +14,7 @@ import {
   SET_BEST_FRIENDS,
   SET_UNSCRATCHED_CARDS,
   SET_REFETCH_USER_CARDS,
+  SET_SELECTED_CARD,
 } from "~/app/context/actions";
 import sdk from "@farcaster/miniapp-sdk";
 import {
@@ -88,6 +89,14 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       if (userCards) {
         dispatch({ type: SET_CARDS, payload: userCards });
         dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(userCards) });
+        
+        // If there's a selected card, update it with the latest data to preserve its state
+        if (state.selectedCard) {
+          const updatedSelectedCard = userCards.find(card => card.id === state.selectedCard!.id);
+          if (updatedSelectedCard) {
+            dispatch({ type: SET_SELECTED_CARD, payload: updatedSelectedCard });
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to refetch user cards:", error);
@@ -211,6 +220,11 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
                 card.id === payload.new.id ? payload.new : card
               );
               dispatch({ type: SET_CARDS, payload: updatedCards });
+              
+              // If the updated card is the currently selected card, update it to preserve its state
+              if (state.selectedCard && state.selectedCard.id === payload.new.id) {
+                dispatch({ type: SET_SELECTED_CARD, payload: payload.new });
+              }
             }
           }
         },

@@ -307,8 +307,9 @@ export async function POST(request: NextRequest) {
         console.log(`Friend user exists: ${existingFriend.username}`);
       }
 
-      // Create free card for the friend
+      // Create free cards for both the user and the friend
       if (friendUserId) {
+        // Create free card for the friend
         const friendPrizeAmount = drawPrize(); // Generate a random prize for the friend's card
         const friendPrizeAsset = PRIZE_ASSETS[Math.floor(Math.random() * PRIZE_ASSETS.length)] || USDC_ADDRESS;
         
@@ -332,7 +333,6 @@ export async function POST(request: NextRequest) {
             scratched: false,
             claimed: false,
             created_at: new Date().toISOString(),
-            scratched_at: new Date().toISOString(),
             card_no: (existingFriend?.cards_count || 0) + 1,
             shared_to: null,
           });
@@ -343,6 +343,40 @@ export async function POST(request: NextRequest) {
           console.log("Created free card for friend");
         }
 
+        // Create free card for the user (you)
+        const userPrizeAmount = drawPrize(); // Generate a random prize for the user's card
+        const userPrizeAsset = PRIZE_ASSETS[Math.floor(Math.random() * PRIZE_ASSETS.length)] || USDC_ADDRESS;
+        
+        const userCardNumbers = generateNumbers({
+          prizeAmount: userPrizeAmount,
+          prizeAsset: userPrizeAsset,
+          decoyAmounts: [0.5, 1, 2, 5, 10],
+          decoyAssets: PRIZE_ASSETS as unknown as string[],
+          friends: [], // Empty array since we don't need friend PFPs in this card
+        });
+
+        const { error: userCardError } = await supabaseAdmin
+          .from("cards")
+          .insert({
+            user_wallet: userWallet,
+            payment_tx: "FREE_CARD_SHARED",
+            payout_tx: null,
+            prize_amount: userPrizeAmount,
+            prize_asset_contract: userPrizeAsset,
+            numbers_json: userCardNumbers,
+            scratched: false,
+            claimed: false,
+            created_at: new Date().toISOString(),
+            card_no: (user.cards_count || 0) + 1,
+            shared_to: null,
+          });
+
+        if (userCardError) {
+          console.error("Error creating user card:", userCardError);
+        } else {
+          console.log("Created free card for user");
+        }
+
         // Update friend's cards_count
         if (existingFriend) {
           await supabaseAdmin
@@ -351,8 +385,17 @@ export async function POST(request: NextRequest) {
               cards_count: (existingFriend.cards_count || 0) + 1,
               last_active: new Date().toISOString()
             })
-            .eq("id", friendUserId);
+            .eq("wallet", friendUserId);
         }
+
+        // Update user's cards_count
+        await supabaseAdmin
+          .from("users")
+          .update({ 
+            cards_count: (user.cards_count || 0) + 1,
+            last_active: new Date().toISOString()
+          })
+          .eq("wallet", userWallet);
       }
 
       // Mark card as claimed since the process is complete
