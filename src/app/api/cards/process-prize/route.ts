@@ -23,11 +23,34 @@ export async function POST(request: NextRequest) {
 
     const { data: card, error: cardError } = await supabaseAdmin
       .from("cards")
-      .select("id, payment_tx, prize_amount, prize_asset_contract, scratched, numbers_json, shared_to")
+      .select("id, user_wallet, payment_tx, prize_amount, prize_asset_contract, scratched, claimed, numbers_json, shared_to")
       .eq("id", cardId)
       .single();
     if (cardError || !card) {
       return NextResponse.json({ error: "Card not found" }, { status: 404 });
+    }
+
+    // Validate card ownership
+    if (card.user_wallet !== userWallet) {
+      return NextResponse.json(
+        { error: "Card does not belong to this user" },
+        { status: 403 }
+      );
+    }
+
+    // Validate card status
+    if (card.scratched) {
+      return NextResponse.json(
+        { error: "Card has already been scratched" },
+        { status: 400 }
+      );
+    }
+
+    if (card.claimed) {
+      return NextResponse.json(
+        { error: "Card has already been claimed" },
+        { status: 400 }
+      );
     }
 
     // Update card with scratched status (prize_amount is already set)
