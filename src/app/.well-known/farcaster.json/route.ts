@@ -5,6 +5,7 @@ export async function GET() {
   try {
     const config = await getFarcasterMetadata();
     return NextResponse.json(config);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error) {
     console.error('Error generating metadata:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
