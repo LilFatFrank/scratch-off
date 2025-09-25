@@ -10,33 +10,8 @@ import {
   APP_SPLASH_BACKGROUND_COLOR,
   APP_TAGS,
   APP_URL,
-  APP_WEBHOOK_URL,
 } from "./constants";
 import { APP_SPLASH_URL } from "./constants";
-
-interface MiniAppMetadata {
-  version: string;
-  name: string;
-  iconUrl: string;
-  homeUrl: string;
-  imageUrl?: string;
-  buttonTitle?: string;
-  splashImageUrl?: string;
-  splashBackgroundColor?: string;
-  webhookUrl?: string;
-  description?: string;
-  primaryCategory?: string;
-  tags?: string[];
-}
-
-interface MiniAppManifest {
-  accountAssociation?: {
-    header: string;
-    payload: string;
-    signature: string;
-  };
-  frame: MiniAppMetadata;
-}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
