@@ -107,7 +107,7 @@ export const fetchActivity = async () => {
   }
 };
 
-export const fetchBestFriends = async (fid: string) => {
+export const fetchBestFriends = async (fid: number) => {
   try {
     const response = await fetch(`/api/users/best-friends?fid=${fid}`);
     const data = await response.json();

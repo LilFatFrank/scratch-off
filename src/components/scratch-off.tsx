@@ -52,6 +52,7 @@ export default function ScratchOff({
   const [showBlurOverlay, setShowBlurOrverlay] = useState(false);
   const [shareButtonText, setShareButtonText] = useState("Share Win");
   const [bestFriend, setBestFriend] = useState<BestFriend | null>(null);
+  const [coverImageLoaded, setCoverImageLoaded] = useState(false);
 
   const { actions, haptics } = useMiniApp();
 
@@ -76,8 +77,7 @@ export default function ScratchOff({
   const handleShare = async () => {
     if (!state.user) return;
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_URL || "https://scratch-off-xi.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_URL;
     const frameUrl =
       `${baseUrl}/api/frame-share?` +
       new URLSearchParams({
@@ -147,10 +147,11 @@ export default function ScratchOff({
         CANVAS_WIDTH,
         CANVAS_HEIGHT
       );
+      setCoverImageLoaded(true);
     };
   }, []);
 
-  // Scratch logic
+  // Scratch logic with touch/mouse events instead of pointer events
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -158,12 +159,24 @@ export default function ScratchOff({
     if (!ctx) return;
 
     let isDrawing = false;
+    let lastPoint: { x: number; y: number } | null = null;
 
-    const getPointer = (e: PointerEvent) => {
+    const getEventPoint = (e: TouchEvent | MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if ('touches' in e) {
+        if (e.touches.length === 0) return null;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
       return {
-        x: ((e.clientX - rect.left) / rect.width) * CANVAS_WIDTH,
-        y: ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT,
+        x: ((clientX - rect.left) / rect.width) * CANVAS_WIDTH,
+        y: ((clientY - rect.top) / rect.height) * CANVAS_HEIGHT,
       };
     };
 
@@ -175,24 +188,79 @@ export default function ScratchOff({
       ctx.globalCompositeOperation = "source-over";
     };
 
-    const pointerDown = (e: PointerEvent) => {
+    const drawLine = (from: { x: number; y: number }, to: { x: number; y: number }) => {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.lineWidth = SCRATCH_RADIUS * 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.globalCompositeOperation = "source-over";
+    };
+
+    // Touch events
+    const touchStart = (e: TouchEvent) => {
       if (!cardData || isProcessing) return;
+      e.preventDefault();
+      const point = getEventPoint(e);
+      if (!point) return;
+      
       isDrawing = true;
-      const { x, y } = getPointer(e);
-      scratch(x, y);
-      window.addEventListener("pointermove", pointerMove);
-      window.addEventListener("pointerup", pointerUp, { once: true });
+      lastPoint = point;
+      scratch(point.x, point.y);
     };
 
-    const pointerMove = (e: PointerEvent) => {
+    const touchMove = (e: TouchEvent) => {
       if (!isDrawing) return;
-      const { x, y } = getPointer(e);
-      scratch(x, y);
+      e.preventDefault();
+      const point = getEventPoint(e);
+      if (!point) return;
+      
+      if (lastPoint) {
+        drawLine(lastPoint, point);
+      }
+      lastPoint = point;
+      scratch(point.x, point.y);
     };
 
-    const pointerUp = () => {
+    const touchEnd = (e: TouchEvent) => {
+      if (!isDrawing) return;
+      e.preventDefault();
       isDrawing = false;
-      window.removeEventListener("pointermove", pointerMove);
+      lastPoint = null;
+      setTimeout(checkScratched, 300);
+    };
+
+    // Mouse events (fallback)
+    const mouseDown = (e: MouseEvent) => {
+      if (!cardData || isProcessing) return;
+      e.preventDefault();
+      const point = getEventPoint(e);
+      if (!point) return;
+      
+      isDrawing = true;
+      lastPoint = point;
+      scratch(point.x, point.y);
+    };
+
+    const mouseMove = (e: MouseEvent) => {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const point = getEventPoint(e);
+      if (!point) return;
+      
+      if (lastPoint) {
+        drawLine(lastPoint, point);
+      }
+      lastPoint = point;
+      scratch(point.x, point.y);
+    };
+
+    const mouseUp = () => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      lastPoint = null;
       setTimeout(checkScratched, 300);
     };
 
@@ -331,6 +399,7 @@ export default function ScratchOff({
               username: state.user?.username,
               amount: prizeAmount,
               friend_fid: bestFriend?.fid,
+              bestFriends: state.bestFriends,
             }),
           }).catch((error) => {
             console.error("Failed to send notification:", error);
@@ -357,6 +426,7 @@ export default function ScratchOff({
               userWallet: cardData.user_wallet,
               username: state.user?.username,
               pfp: state.user?.pfp,
+              friends: state.bestFriends
             }),
           })
             .then((response) => response.json())
@@ -381,11 +451,26 @@ export default function ScratchOff({
       }
     };
 
-    canvas.addEventListener("pointerdown", pointerDown);
+    // Add touch events (primary for mobile/webview)
+    canvas.addEventListener("touchstart", touchStart, { passive: false });
+    canvas.addEventListener("touchmove", touchMove, { passive: false });
+    canvas.addEventListener("touchend", touchEnd, { passive: false });
+    
+    // Add mouse events (fallback for desktop)
+    canvas.addEventListener("mousedown", mouseDown);
+    document.addEventListener("mousemove", mouseMove);
+    document.addEventListener("mouseup", mouseUp);
+
     return () => {
-      canvas.removeEventListener("pointerdown", pointerDown);
-      window.removeEventListener("pointermove", pointerMove);
-      window.removeEventListener("pointerup", pointerUp);
+      // Remove touch events
+      canvas.removeEventListener("touchstart", touchStart);
+      canvas.removeEventListener("touchmove", touchMove);
+      canvas.removeEventListener("touchend", touchEnd);
+      
+      // Remove mouse events
+      canvas.removeEventListener("mousedown", mouseDown);
+      document.removeEventListener("mousemove", mouseMove);
+      document.removeEventListener("mouseup", mouseUp);
     };
   }, []);
 
@@ -448,6 +533,7 @@ export default function ScratchOff({
       setShowBlurOrverlay(false);
       setTilt({ x: 0, y: 0 });
       setShareButtonText("Share Win");
+      setCoverImageLoaded(false);
 
       // Clear timeout on unmount
       if (timeoutRef.current) {
@@ -467,7 +553,10 @@ export default function ScratchOff({
 
   return (
     <>
-      <div className="h-full w-full flex flex-col items-center  justify-center">
+      <div className="h-full w-full flex flex-col items-center justify-center"
+        style={{
+          touchAction: (!cardData?.scratched && !scratched) ? "none" : "auto"
+        }}>
         <p
           className="font-[ABCGaisyr] text-center text-[30px] mb-1 font-bold italic rotate-[-4deg]"
           style={{
@@ -551,7 +640,7 @@ export default function ScratchOff({
                   pointerEvents: "none",
                 }}
               />
-              {cardData?.numbers_json ? (
+              {cardData?.numbers_json && (cardData?.scratched || scratched || coverImageLoaded) ? (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center rotate-[-4deg]">
                   {(() => {
                     const rows = chunk3(cardData.numbers_json);
@@ -645,7 +734,10 @@ export default function ScratchOff({
                     height: CANVAS_HEIGHT,
                     borderRadius: 4,
                     cursor: cardData ? "grab" : "default",
-                    touchAction: "none",
+                    touchAction: "manipulation",
+                    WebkitTouchCallout: "none",
+                    WebkitUserSelect: "none",
+                    userSelect: "none",
                   }}
                 />
               )}

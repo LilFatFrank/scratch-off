@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Scratch Off",
   description: "Scratch to win big!",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
   icons: {
     icon: [
       {
@@ -28,23 +29,6 @@ export const metadata: Metadata = {
         type: "image/jpg",
       },
     ],
-  },
-  other: {
-    "fc:frame": JSON.stringify({
-      version: "next",
-      imageUrl:
-        "https://scratch-off-xi.vercel.app/assets/splash-image.jpg",
-      button: {
-        title: "Scratch Off",
-        action: {
-          type: "launch_frame",
-          name: "Scratch Off",
-          url: "https://farcaster.xyz/miniapps/XK6cHhOmUkRm/scratch-off",
-          splashImageUrl:
-            "https://scratch-off-xi.vercel.app/assets/splash-image.jpg",
-        },
-      },
-    }),
   },
 };
 

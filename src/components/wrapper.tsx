@@ -1,22 +1,26 @@
 "use client";
-import { AppContext } from "../app/context";
-import { FC, useContext, useEffect, useRef, useState } from "react";
+import sdk from "@farcaster/miniapp-sdk";
+import { useMiniApp } from '@neynar/react';
+import { RealtimeChannel } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { FC, useContext, useEffect, useRef, useState } from "react";
 import {
-  SET_APP_STATS,
-  SET_CARDS,
-  SET_LEADERBOARD,
-  SET_USER,
   SET_ACTIVITY,
-  SET_PLAY_WIN_SOUND,
-  SET_GET_WINNER_GIF,
+  SET_APP_STATS,
   SET_BEST_FRIENDS,
-  SET_UNSCRATCHED_CARDS,
+  SET_CARDS,
+  SET_GET_WINNER_GIF,
+  SET_LEADERBOARD,
+  SET_PLAY_WIN_SOUND,
   SET_REFETCH_USER_CARDS,
   SET_SELECTED_CARD,
+  SET_UNSCRATCHED_CARDS,
+  SET_USER,
 } from "~/app/context/actions";
-import sdk from "@farcaster/miniapp-sdk";
+import { Card } from "~/app/interface/card";
+import { subscribeToTable } from "~/lib/supabase";
 import {
   fetchActivity,
   fetchAppStats,
@@ -25,13 +29,10 @@ import {
   fetchUserCards,
   fetchUserInfo,
 } from "~/lib/userapis";
-import { useRouter } from "next/navigation";
-import { subscribeToTable } from "~/lib/supabase";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import { AppContext } from "../app/context";
 import Bottom from "./bottom";
-import { Card } from "~/app/interface/card";
 
-const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
+const Wrapper: FC<{ children: React.ReactNode; }> = ({ children }) => {
   const [state, dispatch] = useContext(AppContext);
   const [loading, setLoading] = useState(true);
   const readyCalled = useRef(false);
@@ -40,6 +41,8 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentActivityRef = useRef(state.activity);
   const currentUnscratchedCardsRef = useRef(state.unscratchedCards);
   const { push } = useRouter();
+  const { context } = useMiniApp();
+  const userFid = context?.user.fid;
 
   // Audio for win sounds - load once and reuse
   const winAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -82,14 +85,14 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   // Refetch function for user cards
   const refetchUserCards = async () => {
     if (!state.publicKey) return;
-    
+
     try {
       const { fetchUserCards } = await import("~/lib/userapis");
       const userCards = await fetchUserCards(state.publicKey);
       if (userCards) {
         dispatch({ type: SET_CARDS, payload: userCards });
         dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(userCards) });
-        
+
         // If there's a selected card, update it with the latest data to preserve its state
         if (state.selectedCard) {
           const updatedSelectedCard = userCards.find(card => card.id === state.selectedCard!.id);
@@ -133,14 +136,15 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Fetch all data when wallet connects
   useEffect(() => {
-    if (state.publicKey) {
-      fetchAllData(state.publicKey);
+    if (state.publicKey && userFid) {
+      fetchAllData(state.publicKey, userFid);
     }
-  }, [state.publicKey]);
+  }, [state.publicKey, userFid]);
 
   // Fetch all data when wallet connects using Promise.allSettled
-  const fetchAllData = async (userWallet: string) => {
+  const fetchAllData = async (userWallet: string, userFid: number) => {
     if (!userWallet) return;
+    if (!userFid) return;
 
     setLoading(true);
 
@@ -161,7 +165,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       }
       if (userInfo.status === "fulfilled") {
         dispatch({ type: SET_USER, payload: userInfo.value });
-        const bestFriends = await fetchBestFriends(userInfo.value.fid);
+        const bestFriends = await fetchBestFriends(userFid);
         dispatch({
           type: SET_BEST_FRIENDS,
           payload: bestFriends,
@@ -193,11 +197,11 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   // Fetch all data when wallet connects
-  useEffect(() => {
-    if (state.publicKey) {
-      fetchAllData(state.publicKey);
-    }
-  }, [state.publicKey]);
+  // useEffect(() => {
+  //   if (state.publicKey && userFid) {
+  //     fetchAllData(state.publicKey, userFid);
+  //   }
+  // }, [state.publicKey, userFid]);
 
   // Setup real-time subscriptions
   useEffect(() => {
@@ -208,11 +212,13 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
       const cardsSub = subscribeToTable(
         "cards",
         (payload) => {
-          console.log("payload", payload);
           // Only handle cards for the current user
           if (payload.new && payload.new.user_wallet === state.publicKey) {
             if (payload.eventType === "INSERT") {
-              dispatch({ type: SET_CARDS, payload: [payload.new, ...currentCardsRef.current] });
+              const newCards = [payload.new, ...currentCardsRef.current];
+              dispatch({ type: SET_CARDS, payload: newCards });
+              // Also update unscratched cards immediately
+              dispatch({ type: SET_UNSCRATCHED_CARDS, payload: getUnscratchedCards(newCards) });
             }
             if (payload.eventType === "UPDATE") {
               // Scenario 2: Card is updated (revealed)
@@ -220,7 +226,7 @@ const Wrapper: FC<{ children: React.ReactNode }> = ({ children }) => {
                 card.id === payload.new.id ? payload.new : card
               );
               dispatch({ type: SET_CARDS, payload: updatedCards });
-              
+
               // If the updated card is the currently selected card, update it to preserve its state
               if (state.selectedCard && state.selectedCard.id === payload.new.id) {
                 dispatch({ type: SET_SELECTED_CARD, payload: payload.new });

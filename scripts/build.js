@@ -98,31 +98,6 @@ async function queryNeynarApp(apiKey) {
   }
 }
 
-async function generateFarcasterMetadata(domain, webhookUrl) {
-  const tags = process.env.NEXT_PUBLIC_MINI_APP_TAGS?.split(",");
-
-  return {
-    accountAssociation: {
-      header: "",
-      payload: "",
-      signature: "",
-    },
-    frame: {
-      version: "1",
-      name: process.env.NEXT_PUBLIC_MINI_APP_NAME,
-      iconUrl: `https://${domain}/icon.png`,
-      homeUrl: `https://${domain}`,
-      imageUrl: `https://${domain}/api/opengraph-image`,
-      buttonTitle: process.env.NEXT_PUBLIC_MINI_APP_BUTTON_TEXT,
-      splashImageUrl: `https://${domain}/splash.png`,
-      splashBackgroundColor: "#f7f7f7",
-      webhookUrl,
-      description: process.env.NEXT_PUBLIC_MINI_APP_DESCRIPTION,
-      primaryCategory: process.env.NEXT_PUBLIC_MINI_APP_PRIMARY_CATEGORY,
-      tags,
-    },
-  };
-}
 
 async function main() {
   try {
@@ -247,17 +222,6 @@ async function main() {
       }
     }
 
-    // Generate manifest
-    console.log("\n🔨 Generating mini app manifest...");
-
-    // Determine webhook URL based on environment variables
-    const webhookUrl =
-      neynarApiKey && neynarClientId
-        ? `https://api.neynar.com/f/app/${neynarClientId}/event`
-        : `https://${domain}/api/webhook`;
-
-    const metadata = await generateFarcasterMetadata(domain, webhookUrl);
-    console.log("\n✅ Mini app manifest generated");
 
     // Read existing .env file or create new one
     const envPath = path.join(projectRoot, ".env");
@@ -307,9 +271,6 @@ async function main() {
         process.env.NEXTAUTH_SECRET || crypto.randomBytes(32).toString("hex")
       }"`,
       `NEXTAUTH_URL="https://${domain}"`,
-
-      // Mini app manifest with signature
-      `MINI_APP_METADATA=${JSON.stringify(metadata)}`,
     ];
 
     // Filter out empty values and join with newlines
